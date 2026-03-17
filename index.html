@@ -315,22 +315,25 @@ const GT_DIRECT = 'https://api.geckoterminal.com/api/v2';
 const GT_HDR    = { Accept: 'application/json;version=20230302' };
 const WORKER_URL = null; // set to your Cloudflare Worker URL if using proxy
 
-// ── VERIFIED PRESETS (Ethereum mainnet, all addresses confirmed live on GeckoTerminal) ─
-// currency: 'usd'   = price expressed in USD (use when WETH is base token, e.g. WETH/USDC)
-// currency: 'token' = price expressed in quote token (use for TOKEN/WETH pools)
+// ── PRESETS — keyed by token contract address (permanent on Ethereum mainnet) ──
+// Pool addresses are resolved at runtime by querying GeckoTerminal for the
+// highest-liquidity WETH-paired pool. This means dead/migrated pools are
+// automatically skipped without any code changes needed.
+//
+// quoteIsUSD: true  → ETH/USDC — price in dollars  (currency:'usd')
+// quoteIsUSD: false → X/ETH    — price in WETH      (currency:'token')
+const WETH_ADDR = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2';
+const USDC_ADDR = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48';
+
 const PRESETS = [
-  // WETH is token0 (base) in this pool → price comes back as USDC per WETH → use usd
-  { symbol:'ETH/USDC', category:'Base',      dex:'Uniswap V3 0.05%', poolAddress:'0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640', quoteIsUSD:true,  currency:'usd'   },
-  // TOKEN is token0 in these pools → currency:token gives ETH price per token
-  { symbol:'ARB/ETH',  category:'L2',         dex:'Uniswap V3 0.3%',  poolAddress:'0x59354356ec5d56306791873f567d61ebf11dfbd5', quoteIsUSD:false, currency:'token' },
-  { symbol:'LINK/ETH', category:'Oracle',     dex:'Uniswap V3 0.3%',  poolAddress:'0xa6cc3c2531fdaa6ae1a3ca84c2855806728693e8', quoteIsUSD:false, currency:'token' },
-  { symbol:'UNI/ETH',  category:'DeFi',       dex:'Uniswap V3 0.3%',  poolAddress:'0x1d42064fc4beb5f8aaf85f4617ae8b3b5b8bd801', quoteIsUSD:false, currency:'token' },
-  { symbol:'AAVE/ETH', category:'DeFi',       dex:'Uniswap V3 0.3%',  poolAddress:'0x5ab53ee1d50eef2c1dd3d5402789cd27bb52c1bb', quoteIsUSD:false, currency:'token' },
-  { symbol:'POL/ETH',  category:'L2',         dex:'Uniswap V3 0.3%',  poolAddress:'0x88ada7b1dd1c728ea87404cea7a0780139eb35d1', quoteIsUSD:false, currency:'token' },
-  // LDO: corrected to the active 1% fee pool (old 0.3% pool is dead)
-  { symbol:'LDO/ETH',  category:'LST',        dex:'Uniswap V3 1%',    poolAddress:'0xf4ad61db72f114be877e87d62dc5e7bd52df4d9b', quoteIsUSD:false, currency:'token' },
-  // AMP: Uniswap V3 0.3% AMP/WETH — currency:token gives WETH per AMP
-  { symbol:'AMP/ETH',  category:'Collateral', dex:'Uniswap V3 0.3%',  poolAddress:'0x14424eeecbff345b38187d0b8b749e56faa68539', quoteIsUSD:false, currency:'token' },
+  { symbol:'ETH/USDC', category:'Base',       tokenAddress: WETH_ADDR, pairToken: USDC_ADDR, quoteIsUSD:true  },
+  { symbol:'ARB/ETH',  category:'L2',          tokenAddress:'0xb50721bcf8d664c30412cfbc6cf7a15145234ad1', quoteIsUSD:false },
+  { symbol:'LINK/ETH', category:'Oracle',      tokenAddress:'0x514910771af9ca656af840dff83e8264ecf986ca', quoteIsUSD:false },
+  { symbol:'UNI/ETH',  category:'DeFi',        tokenAddress:'0x1f9840a85d5af5bf1d1762f925bdaddc4201f984', quoteIsUSD:false },
+  { symbol:'AAVE/ETH', category:'DeFi',        tokenAddress:'0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9', quoteIsUSD:false },
+  { symbol:'POL/ETH',  category:'L2',          tokenAddress:'0x455e53cbb86018ac2b8092fdcd39d8444affc3f6', quoteIsUSD:false },
+  { symbol:'LDO/ETH',  category:'LST',         tokenAddress:'0x5a98fcbea516cf06857215779fd812ca3bef1b32', quoteIsUSD:false },
+  { symbol:'AMP/ETH',  category:'Collateral',  tokenAddress:'0xff20817765cb7f73d4bde2e66e067e58d11095c2', quoteIsUSD:false },
 ];
 
 let selectedPresets = new Set(['ETH/USDC','ARB/ETH','LINK/ETH','AMP/ETH']);
@@ -372,8 +375,54 @@ async function gtFetch(path) {
   return res.json();
 }
 
+// Resolve the best live pool for a token at runtime.
+// Queries GeckoTerminal for all ETH-mainnet pools for the token, filters to
+// WETH-paired (or USDC-paired for ETH/USDC), picks the one with highest liquidity.
+// Returns { poolAddress, dex, currency } — all three needed for OHLCV fetch.
+async function resolvePool(preset) {
+  // ETH/USDC is special: look up WETH token pools, filter for USDC pair
+  const tokenAddr = preset.tokenAddress;
+  const data = await gtFetch(`/networks/eth/tokens/${tokenAddr}/pools?page=1`);
+  const pools = data?.data || [];
+  if (!pools.length) throw new Error('No pools found for token');
+
+  // For ETH/USDC: want WETH/USDC pool (pairToken = USDC)
+  // For X/ETH:   want TOKEN/WETH pool
+  const targetPair = preset.quoteIsUSD ? USDC_ADDR : WETH_ADDR;
+
+  const matched = pools.filter(p => {
+    const rel = p.relationships;
+    const ids = [
+      rel?.base_token?.data?.id  || '',
+      rel?.quote_token?.data?.id || '',
+    ].map(id => id.toLowerCase());
+    return ids.some(id => id.includes(targetPair.toLowerCase()));
+  });
+
+  // Pick highest liquidity from matched pools; fall back to first pool if no match
+  const candidates = matched.length ? matched : pools;
+  candidates.sort((a, b) =>
+    (+b.attributes?.reserve_in_usd || 0) - (+a.attributes?.reserve_in_usd || 0)
+  );
+
+  const best = candidates[0];
+  const poolAddress = best.attributes?.address;
+  if (!poolAddress) throw new Error('Could not determine pool address');
+
+  // Determine currency direction:
+  // 'usd'   → price in dollars  (ETH/USDC — WETH is base token)
+  // 'token' → price in WETH     (X/ETH pools)
+  const currency = preset.quoteIsUSD ? 'usd' : 'token';
+
+  // Parse DEX name from relationship id
+  const dexId  = best.relationships?.dex?.data?.id || '';
+  const dex    = dexId.split('_').map(w => w[0]?.toUpperCase() + w.slice(1)).join(' ') || 'Unknown DEX';
+  const liq    = best.attributes?.reserve_in_usd ? '$' + compact(+best.attributes.reserve_in_usd) : '?';
+
+  return { poolAddress, dex, currency, liq };
+}
+
 async function fetchOHLCV(poolAddress, currency) {
-  // currency: 'usd' for WETH-base pools (e.g. WETH/USDC), 'token' for TOKEN/WETH pools
   const cur = currency || 'token';
   const data = await gtFetch(`/networks/eth/pools/${poolAddress}/ohlcv/hour?aggregate=1&limit=168&currency=${cur}`);
   const list = data?.data?.attributes?.ohlcv_list;
@@ -442,7 +491,8 @@ function addPool(pool, name, dexName) {
   if (customPairs.some(p => p.poolAddress.toLowerCase() === addr.toLowerCase())) { closeSearch(); return; }
   const quoteIsUSD = /usdc|usdt|dai/i.test(name);
   const label = name.split(' 0')[0].replace(/ \/ /g, '/').replace(/ \//, '/');
-  customPairs.push({ symbol:label, category:'Custom', poolAddress:addr, quoteIsUSD, dex:dexName, currency: quoteIsUSD ? 'usd' : 'token' });
+  // Custom pairs come with a known pool address from the picker — no resolve needed
+  customPairs.push({ symbol:label, category:'Custom', poolAddress:addr, quoteIsUSD, dex:dexName, currency: quoteIsUSD ? 'usd' : 'token', resolved:true });
 
   const btn = document.createElement('button');
   btn.className = 'pair-toggle active';
@@ -862,15 +912,48 @@ async function runAnalysis() {
 
   setStatus('live'); setProgress(5, 'Initializing GeckoTerminal requests…');
 
+  // Delay between every GT request: 2.2s gives ~27 req/min max headroom
+  // With resolvePool (1 req) + fetchOHLCV (1 req) per pair = 2 requests per pair
+  // 8 pairs × 2 req × 2.2s spacing = ~35s total — safe under 30 req/min
+  const DELAY_MS = 2200;
+  const delay = () => new Promise(r => setTimeout(r, DELAY_MS));
+
   const results=[], errors=[];
+  let reqCount = 0; // track total GT requests for progress display
+
   for (let i=0; i<all.length; i++) {
-    const pair=all[i], pct=10+Math.round((i/all.length)*80);
-    setProgress(pct, `Fetching ${pair.symbol} OHLCV…`);
+    const pair = all[i];
+    const pct  = 10 + Math.round((i / all.length) * 80);
+
     try {
-      if (i>0) await new Promise(r=>setTimeout(r,1300));
-      const candles = await fetchOHLCV(pair.poolAddress, pair.currency);
-      setProgress(pct+4, `Computing signals for ${pair.symbol}…`);
-      results.push(analyze(candles, pair));
+      // ── Step 1: resolve best live pool (skip for custom pairs — already have poolAddress)
+      let resolvedPair = { ...pair };
+      if (!pair.resolved && !pair.poolAddress) {
+        setProgress(pct, `Finding best pool for ${pair.symbol}…`);
+        if (reqCount > 0) await delay();
+        const { poolAddress, dex, currency, liq } = await resolvePool(pair);
+        resolvedPair = { ...pair, poolAddress, dex, currency };
+        reqCount++;
+        setProgress(pct + 2, `${pair.symbol} → ${dex} (liq ${liq})`);
+      } else if (!pair.resolved && pair.poolAddress) {
+        // Preset still has hardcoded poolAddress from older code path — resolve anyway
+        setProgress(pct, `Finding best pool for ${pair.symbol}…`);
+        if (reqCount > 0) await delay();
+        const { poolAddress, dex, currency, liq } = await resolvePool(pair);
+        resolvedPair = { ...pair, poolAddress, dex, currency };
+        reqCount++;
+        setProgress(pct + 2, `${pair.symbol} → ${dex} (liq ${liq})`);
+      }
+
+      // ── Step 2: fetch OHLCV for the resolved pool
+      setProgress(pct + 3, `Fetching ${pair.symbol} OHLCV…`);
+      if (reqCount > 0) await delay();
+      const candles = await fetchOHLCV(resolvedPair.poolAddress, resolvedPair.currency);
+      reqCount++;
+
+      setProgress(pct + 5, `Computing signals for ${pair.symbol}…`);
+      results.push(analyze(candles, resolvedPair));
+
     } catch(err) { errors.push(`${pair.symbol}: ${err.message}`); }
   }
 
