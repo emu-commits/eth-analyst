@@ -315,16 +315,22 @@ const GT_DIRECT = 'https://api.geckoterminal.com/api/v2';
 const GT_HDR    = { Accept: 'application/json;version=20230302' };
 const WORKER_URL = null; // set to your Cloudflare Worker URL if using proxy
 
-// ── VERIFIED PRESETS (Ethereum mainnet Uniswap V3, confirmed on GeckoTerminal) ─
+// ── VERIFIED PRESETS (Ethereum mainnet, all addresses confirmed live on GeckoTerminal) ─
+// currency: 'usd'   = price expressed in USD (use when WETH is base token, e.g. WETH/USDC)
+// currency: 'token' = price expressed in quote token (use for TOKEN/WETH pools)
 const PRESETS = [
-  { symbol:'ETH/USDC', category:'Base',      dex:'Uniswap V3 0.05%', poolAddress:'0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640', quoteIsUSD:true  },
-  { symbol:'ARB/ETH',  category:'L2',         dex:'Uniswap V3 0.3%',  poolAddress:'0x59354356ec5d56306791873f567d61ebf11dfbd5', quoteIsUSD:false },
-  { symbol:'LINK/ETH', category:'Oracle',     dex:'Uniswap V3 0.3%',  poolAddress:'0xa6cc3c2531fdaa6ae1a3ca84c2855806728693e8', quoteIsUSD:false },
-  { symbol:'UNI/ETH',  category:'DeFi',       dex:'Uniswap V3 0.3%',  poolAddress:'0x1d42064fc4beb5f8aaf85f4617ae8b3b5b8bd801', quoteIsUSD:false },
-  { symbol:'AAVE/ETH', category:'DeFi',       dex:'Uniswap V3 0.3%',  poolAddress:'0x5ab53ee1d50eef2c1dd3d5402789cd27bb52c1bb', quoteIsUSD:false },
-  { symbol:'POL/ETH',  category:'L2',         dex:'Uniswap V3 0.3%',  poolAddress:'0x88ada7b1dd1c728ea87404cea7a0780139eb35d1', quoteIsUSD:false },
-  { symbol:'LDO/ETH',  category:'LST',        dex:'Uniswap V3 0.3%',  poolAddress:'0xa3f558aebaecaf0e11ca4b2199cc5ed341edfd74', quoteIsUSD:false },
-  { symbol:'AMP/ETH',  category:'Collateral', dex:'Uniswap V3 0.3%',  poolAddress:'0x14424eeecbff345b38187d0b8b749e56faa68539', quoteIsUSD:false },
+  // WETH is token0 (base) in this pool → price comes back as USDC per WETH → use usd
+  { symbol:'ETH/USDC', category:'Base',      dex:'Uniswap V3 0.05%', poolAddress:'0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640', quoteIsUSD:true,  currency:'usd'   },
+  // TOKEN is token0 in these pools → currency:token gives ETH price per token
+  { symbol:'ARB/ETH',  category:'L2',         dex:'Uniswap V3 0.3%',  poolAddress:'0x59354356ec5d56306791873f567d61ebf11dfbd5', quoteIsUSD:false, currency:'token' },
+  { symbol:'LINK/ETH', category:'Oracle',     dex:'Uniswap V3 0.3%',  poolAddress:'0xa6cc3c2531fdaa6ae1a3ca84c2855806728693e8', quoteIsUSD:false, currency:'token' },
+  { symbol:'UNI/ETH',  category:'DeFi',       dex:'Uniswap V3 0.3%',  poolAddress:'0x1d42064fc4beb5f8aaf85f4617ae8b3b5b8bd801', quoteIsUSD:false, currency:'token' },
+  { symbol:'AAVE/ETH', category:'DeFi',       dex:'Uniswap V3 0.3%',  poolAddress:'0x5ab53ee1d50eef2c1dd3d5402789cd27bb52c1bb', quoteIsUSD:false, currency:'token' },
+  { symbol:'POL/ETH',  category:'L2',         dex:'Uniswap V3 0.3%',  poolAddress:'0x88ada7b1dd1c728ea87404cea7a0780139eb35d1', quoteIsUSD:false, currency:'token' },
+  // LDO: corrected to the active 1% fee pool (old 0.3% pool is dead)
+  { symbol:'LDO/ETH',  category:'LST',        dex:'Uniswap V3 1%',    poolAddress:'0xf4ad61db72f114be877e87d62dc5e7bd52df4d9b', quoteIsUSD:false, currency:'token' },
+  // AMP: Uniswap V3 0.3% AMP/WETH — currency:token gives WETH per AMP
+  { symbol:'AMP/ETH',  category:'Collateral', dex:'Uniswap V3 0.3%',  poolAddress:'0x14424eeecbff345b38187d0b8b749e56faa68539', quoteIsUSD:false, currency:'token' },
 ];
 
 let selectedPresets = new Set(['ETH/USDC','ARB/ETH','LINK/ETH','AMP/ETH']);
@@ -366,8 +372,10 @@ async function gtFetch(path) {
   return res.json();
 }
 
-async function fetchOHLCV(poolAddress) {
-  const data = await gtFetch(`/networks/eth/pools/${poolAddress}/ohlcv/hour?aggregate=1&limit=168&currency=token`);
+async function fetchOHLCV(poolAddress, currency) {
+  // currency: 'usd' for WETH-base pools (e.g. WETH/USDC), 'token' for TOKEN/WETH pools
+  const cur = currency || 'token';
+  const data = await gtFetch(`/networks/eth/pools/${poolAddress}/ohlcv/hour?aggregate=1&limit=168&currency=${cur}`);
   const list = data?.data?.attributes?.ohlcv_list;
   if (!list || list.length < 20) throw new Error('Insufficient OHLCV data');
   return list.slice().reverse().map(c => ({ open:+c[1], high:+c[2], low:+c[3], close:+c[4], volume:+c[5] }));
@@ -434,7 +442,7 @@ function addPool(pool, name, dexName) {
   if (customPairs.some(p => p.poolAddress.toLowerCase() === addr.toLowerCase())) { closeSearch(); return; }
   const quoteIsUSD = /usdc|usdt|dai/i.test(name);
   const label = name.split(' 0')[0].replace(/ \/ /g, '/').replace(/ \//, '/');
-  customPairs.push({ symbol:label, category:'Custom', poolAddress:addr, quoteIsUSD, dex:dexName });
+  customPairs.push({ symbol:label, category:'Custom', poolAddress:addr, quoteIsUSD, dex:dexName, currency: quoteIsUSD ? 'usd' : 'token' });
 
   const btn = document.createElement('button');
   btn.className = 'pair-toggle active';
@@ -843,7 +851,7 @@ async function runAnalysis() {
     setProgress(pct, `Fetching ${pair.symbol} OHLCV…`);
     try {
       if (i>0) await new Promise(r=>setTimeout(r,1300));
-      const candles = await fetchOHLCV(pair.poolAddress);
+      const candles = await fetchOHLCV(pair.poolAddress, pair.currency);
       setProgress(pct+4, `Computing signals for ${pair.symbol}…`);
       results.push(analyze(candles, pair));
     } catch(err) { errors.push(`${pair.symbol}: ${err.message}`); }
