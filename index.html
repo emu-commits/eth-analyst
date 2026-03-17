@@ -521,6 +521,16 @@ function analyze(candles, pair) {
     if (boll.upper>current&&boll.upper<exit*1.02) exit=(exit+boll.upper)/2;
   }
   if (rsi&&rsi>50) entry*=0.99;
+
+  // ── Guard: enforce minimum entry/exit spread of 1× ATR ───────────────────
+  // Prevents entry==exit collapse when S/R levels converge on the same price
+  if ((exit - entry) < atr) {
+    entry = entry - atr * 0.5;
+    exit  = exit  + atr * 0.5;
+  }
+  // Secondary guard: exit must always be above entry
+  if (exit <= entry) exit = entry * 1.03;
+
   const stop=entry-atr*1.5;
   const risk=Math.max(entry-stop,1e-18), rr=(exit-entry)/risk;
 
@@ -543,9 +553,16 @@ function analyze(candles, pair) {
   if(change7d<-8){score+=1;signals.push('7D dip');}
   else if(change7d>15) score-=1;
 
+  // Downgrade BUY/SELL to HOLD if R:R is too thin to act on
+  let verdict = score>=3?'BUY':score<=-2?'SELL':'HOLD';
+  if (rr < 0.5 && verdict !== 'HOLD') {
+    verdict = 'HOLD';
+    signals.push('R:R too thin — downgraded');
+  }
+
   return { pair, current, change7d, entry, exit, stop, rsi, boll, vwap, atr, rr,
     rsiSig, bollSig, vwapSig,
-    verdict:    score>=3?'BUY':score<=-2?'SELL':'HOLD',
+    verdict,
     confidence: Math.min(100,Math.max(0,50+score*10)),
     signals, closes };
 }
