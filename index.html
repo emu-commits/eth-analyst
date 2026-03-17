@@ -7,243 +7,333 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg:#080c10; --surface:#0d1117; --surface2:#111820;
-    --border:#1c2530; --border-bright:#2e3f50;
-    --text:#c9d8e8; --text-dim:#5a7080; --text-bright:#e8f4ff;
-    --green:#00e5a0; --green-dim:#00a870; --green-bg:rgba(0,229,160,0.06);
-    --red:#ff4d6a; --red-dim:#c0304a; --red-bg:rgba(255,77,106,0.06);
-    --yellow:#f5c842; --yellow-bg:rgba(245,200,66,0.06);
-    --accent:#3d9cff; --accent-bg:rgba(61,156,255,0.08);
-    --mono:'Space Mono',monospace; --display:'Syne',sans-serif;
-  }
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{background:var(--bg);color:var(--text);font-family:var(--mono);font-size:12px;min-height:100vh;overflow-x:hidden}
-  body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.025) 2px,rgba(0,0,0,0.025) 4px);pointer-events:none;z-index:9999}
+/* ── TOKENS ─────────────────────────────────────────────────────────────────── */
+:root {
+  --bg:#080c10; --surface:#0d1117; --surface2:#111820;
+  --border:#1c2530; --border-hi:#2e3f50;
+  --text:#c9d8e8; --dim:#5a7080; --bright:#e8f4ff;
+  --green:#00e5a0; --green-d:#00a870; --green-bg:rgba(0,229,160,.06);
+  --red:#ff4d6a;   --red-d:#c0304a;   --red-bg:rgba(255,77,106,.06);
+  --yellow:#f5c842; --yellow-bg:rgba(245,200,66,.06);
+  --accent:#3d9cff; --accent-bg:rgba(61,156,255,.08);
+  --mono:'Space Mono',monospace;
+  --display:'Syne',sans-serif;
+  --r:4px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--text);font-family:var(--mono);font-size:13px;min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.025) 2px,rgba(0,0,0,.025) 4px);pointer-events:none;z-index:9999}
 
-  /* CORS BANNER */
-  .cors-banner{display:none;padding:12px 32px;background:rgba(245,200,66,0.08);border-bottom:1px solid rgba(245,200,66,0.25);color:var(--yellow);font-size:11px;line-height:1.7}
-  .cors-banner code{background:rgba(245,200,66,0.12);padding:1px 6px;border-radius:2px;font-family:var(--mono)}
+/* ── CORS BANNER ─────────────────────────────────────────────────────────────── */
+.cors-banner{display:none;padding:10px 16px;background:rgba(245,200,66,.08);border-bottom:1px solid rgba(245,200,66,.25);color:var(--yellow);font-size:11px;line-height:1.7}
+.cors-banner code{background:rgba(245,200,66,.12);padding:1px 5px;border-radius:2px}
 
-  header{display:flex;align-items:center;justify-content:space-between;padding:18px 32px;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;z-index:100}
-  .logo{font-family:var(--display);font-weight:800;font-size:20px;color:var(--text-bright);letter-spacing:-.5px}
-  .logo span{color:var(--accent)}
-  .header-meta{display:flex;align-items:center;gap:24px;color:var(--text-dim);font-size:11px}
-  .status-dot{width:7px;height:7px;border-radius:50%;background:var(--text-dim);display:inline-block;margin-right:6px;transition:background .3s}
-  .status-dot.live{background:var(--green);animation:pulse 2s infinite}
-  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+/* ── HEADER ──────────────────────────────────────────────────────────────────── */
+header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;z-index:100;gap:12px}
+.logo{font-family:var(--display);font-weight:800;font-size:18px;color:var(--bright);letter-spacing:-.5px;white-space:nowrap}
+.logo span{color:var(--accent)}
+.header-right{display:flex;align-items:center;gap:12px;flex-shrink:0}
+.status-pill{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--dim);letter-spacing:.06em;white-space:nowrap}
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--dim);flex-shrink:0;transition:background .3s}
+.status-dot.live{background:var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.last-updated{font-size:10px;color:var(--dim);display:none}
 
-  .main{max-width:1440px;margin:0 auto;padding:28px 32px}
-  .controls{display:flex;gap:20px;margin-bottom:28px;flex-wrap:wrap;align-items:flex-end}
-  .control-group{display:flex;flex-direction:column;gap:6px}
-  .control-label{font-size:10px;color:var(--text-dim);letter-spacing:.1em;text-transform:uppercase}
-  .pairs-grid{display:flex;flex-wrap:wrap;gap:8px;max-width:860px}
-  .pair-toggle{padding:7px 13px;border:1px solid var(--border);background:transparent;color:var(--text-dim);font-family:var(--mono);font-size:11px;cursor:pointer;border-radius:3px;transition:all .15s;user-select:none;white-space:nowrap}
-  .pair-toggle:hover{border-color:var(--border-bright);color:var(--text)}
-  .pair-toggle.active{border-color:var(--accent);background:var(--accent-bg);color:var(--accent)}
+/* ── LAYOUT ──────────────────────────────────────────────────────────────────── */
+.main{padding:16px;max-width:1440px;margin:0 auto}
 
-  /* Custom token search */
-  .custom-row{display:flex;gap:8px;align-items:stretch;margin-top:4px}
-  .token-input{padding:8px 12px;background:var(--surface2);border:1px solid var(--border);color:var(--text-bright);font-family:var(--mono);font-size:12px;border-radius:3px;width:210px;outline:none;transition:border-color .15s;letter-spacing:.04em}
-  .token-input::placeholder{color:var(--text-dim)}
-  .token-input:focus{border-color:var(--accent)}
-  .search-btn{padding:8px 16px;background:transparent;border:1px solid var(--border-bright);color:var(--text);font-family:var(--mono);font-size:11px;cursor:pointer;border-radius:3px;transition:all .15s;white-space:nowrap}
-  .search-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-bg)}
-  .search-btn:disabled{opacity:.4;cursor:not-allowed}
+/* ── CONTROLS ────────────────────────────────────────────────────────────────── */
+.section-label{font-size:10px;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px}
 
-  /* Pool picker */
-  .pool-picker{margin-top:8px;background:var(--surface);border:1px solid var(--border-bright);border-radius:4px;overflow:hidden;display:none;max-width:700px}
-  .pool-picker-hdr{padding:10px 14px;font-size:10px;color:var(--text-dim);letter-spacing:.08em;text-transform:uppercase;border-bottom:1px solid var(--border)}
-  .pool-opt{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;cursor:default;transition:background .1s;gap:12px;border-bottom:1px solid var(--border)}
-  .pool-opt:last-child{border-bottom:none}
-  .pool-opt:hover{background:var(--accent-bg)}
-  .pool-name{font-family:var(--display);font-weight:600;font-size:13px;color:var(--text-bright)}
-  .pool-dex{font-size:10px;color:var(--text-dim);margin-top:2px}
-  .pool-meta{display:flex;gap:20px;font-size:11px;color:var(--text-dim);flex-shrink:0}
-  .pool-add-btn{padding:5px 12px;border:1px solid var(--accent);background:transparent;color:var(--accent);font-family:var(--mono);font-size:10px;cursor:pointer;border-radius:2px;transition:all .12s;flex-shrink:0}
-  .pool-add-btn:hover{background:var(--accent-bg)}
+.pairs-grid{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:16px}
+.pair-toggle{padding:7px 11px;border:1px solid var(--border);background:transparent;color:var(--dim);font-family:var(--mono);font-size:11px;cursor:pointer;border-radius:var(--r);transition:all .15s;user-select:none;white-space:nowrap;-webkit-tap-highlight-color:transparent}
+.pair-toggle:active,.pair-toggle:hover{border-color:var(--border-hi);color:var(--text)}
+.pair-toggle.active{border-color:var(--accent);background:var(--accent-bg);color:var(--accent)}
 
-  /* Buttons */
-  .btn-row{display:flex;gap:10px;align-items:center;margin-left:auto}
-  .run-btn{padding:10px 28px;background:var(--accent);color:var(--bg);border:none;font-family:var(--display);font-weight:600;font-size:13px;cursor:pointer;border-radius:3px;transition:all .15s;letter-spacing:.02em}
-  .run-btn:hover{background:#6ab5ff}
-  .run-btn:disabled{background:var(--border);color:var(--text-dim);cursor:not-allowed}
-  .export-btn{padding:10px 20px;background:transparent;color:var(--green);border:1px solid var(--green-dim);font-family:var(--display);font-weight:600;font-size:13px;cursor:pointer;border-radius:3px;transition:all .15s;display:none}
-  .export-btn:hover{background:var(--green-bg)}
+/* Custom search */
+.custom-row{display:flex;gap:8px;margin-bottom:8px}
+.token-input{flex:1;min-width:0;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);color:var(--bright);font-family:var(--mono);font-size:12px;border-radius:var(--r);outline:none;transition:border-color .15s;-webkit-appearance:none}
+.token-input::placeholder{color:var(--dim)}
+.token-input:focus{border-color:var(--accent)}
+.search-btn{padding:10px 14px;background:transparent;border:1px solid var(--border-hi);color:var(--text);font-family:var(--mono);font-size:11px;cursor:pointer;border-radius:var(--r);transition:all .15s;white-space:nowrap;-webkit-tap-highlight-color:transparent}
+.search-btn:active,.search-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-bg)}
+.search-btn:disabled{opacity:.4;cursor:not-allowed}
 
-  /* Progress */
-  .progress-bar{width:100%;height:2px;background:var(--border);border-radius:1px;margin-bottom:14px;display:none;overflow:hidden}
-  .progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--green));border-radius:1px;transition:width .3s ease;width:0%}
-  .progress-log{font-size:11px;color:var(--text-dim);margin-bottom:16px;min-height:16px;display:none}
-  .progress-log .tick{color:var(--green);margin-right:6px}
-  .error-msg{padding:14px 18px;background:var(--red-bg);border:1px solid var(--red-dim);border-radius:3px;color:var(--red);font-size:12px;margin-bottom:16px;display:none;line-height:1.7}
+/* Pool picker */
+.pool-picker{background:var(--surface);border:1px solid var(--border-hi);border-radius:var(--r);overflow:hidden;display:none;margin-bottom:12px}
+.pool-picker-hdr{padding:10px 14px;font-size:10px;color:var(--dim);letter-spacing:.08em;text-transform:uppercase;border-bottom:1px solid var(--border)}
+.pool-opt{display:flex;align-items:flex-start;justify-content:space-between;padding:12px 14px;transition:background .1s;gap:10px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.pool-opt:last-child{border-bottom:none}
+.pool-opt:hover{background:var(--accent-bg)}
+.pool-opt-info{flex:1;min-width:0}
+.pool-opt-name{font-family:var(--display);font-weight:600;font-size:13px;color:var(--bright);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pool-opt-dex{font-size:10px;color:var(--dim);margin-top:2px}
+.pool-opt-meta{display:flex;gap:14px;font-size:11px;color:var(--dim);margin-top:6px;flex-wrap:wrap}
+.pool-add-btn{padding:6px 14px;border:1px solid var(--accent);background:transparent;color:var(--accent);font-family:var(--mono);font-size:10px;cursor:pointer;border-radius:2px;transition:all .12s;flex-shrink:0;align-self:center;-webkit-tap-highlight-color:transparent}
+.pool-add-btn:active,.pool-add-btn:hover{background:var(--accent-bg)}
 
-  /* Results */
-  .results-section{display:none}
-  .section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
-  .section-title{font-family:var(--display);font-weight:600;font-size:14px;color:var(--text-bright)}
-  .section-sub{font-size:10px;color:var(--text-dim);letter-spacing:.06em;text-transform:uppercase;margin-top:2px}
-  .summary-bar{display:flex;gap:24px;padding:16px 20px;background:var(--surface);border:1px solid var(--border);border-radius:4px;margin-bottom:20px;flex-wrap:wrap;align-items:center}
-  .summary-stat{display:flex;flex-direction:column;gap:3px}
-  .summary-stat-val{font-family:var(--display);font-weight:700;font-size:18px;color:var(--text-bright)}
-  .summary-stat-label{font-size:10px;color:var(--text-dim);letter-spacing:.08em;text-transform:uppercase}
-  .vdivider{width:1px;align-self:stretch;background:var(--border)}
-  .table-wrapper{background:var(--surface);border:1px solid var(--border);border-radius:4px;overflow:hidden;overflow-x:auto}
+/* Run / export buttons */
+.action-row{display:flex;gap:10px;margin-bottom:20px}
+.run-btn{flex:1;padding:13px;background:var(--accent);color:var(--bg);border:none;font-family:var(--display);font-weight:700;font-size:14px;cursor:pointer;border-radius:var(--r);transition:all .15s;letter-spacing:.02em;-webkit-tap-highlight-color:transparent}
+.run-btn:active,.run-btn:hover{background:#6ab5ff}
+.run-btn:disabled{background:var(--border);color:var(--dim);cursor:not-allowed}
+.export-btn{padding:13px 18px;background:transparent;color:var(--green);border:1px solid var(--green-d);font-family:var(--display);font-weight:700;font-size:14px;cursor:pointer;border-radius:var(--r);transition:all .15s;display:none;white-space:nowrap;-webkit-tap-highlight-color:transparent}
+.export-btn:active,.export-btn:hover{background:var(--green-bg)}
+
+/* Progress */
+.progress-bar{width:100%;height:2px;background:var(--border);border-radius:1px;margin-bottom:12px;display:none;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--green));border-radius:1px;transition:width .3s ease;width:0%}
+.progress-log{font-size:11px;color:var(--dim);margin-bottom:14px;min-height:16px;display:none;line-height:1.5}
+.progress-log .tick{color:var(--green);margin-right:6px}
+.error-msg{padding:12px 16px;background:var(--red-bg);border:1px solid var(--red-d);border-radius:var(--r);color:var(--red);font-size:11px;margin-bottom:14px;display:none;line-height:1.7}
+
+/* ── SUMMARY BAR ─────────────────────────────────────────────────────────────── */
+.summary-bar{display:grid;grid-template-columns:repeat(5,1fr);gap:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);margin-bottom:16px;overflow:hidden}
+.summary-stat{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:14px 8px;border-right:1px solid var(--border)}
+.summary-stat:last-child{border-right:none}
+.summary-val{font-family:var(--display);font-weight:700;font-size:20px;color:var(--bright)}
+.summary-lbl{font-size:9px;color:var(--dim);letter-spacing:.08em;text-transform:uppercase}
+
+/* ── RESULTS: CARDS (mobile default) ─────────────────────────────────────────── */
+.results-section{display:none}
+.cards-grid{display:flex;flex-direction:column;gap:12px}
+
+.signal-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+
+/* Card top bar: pair name + verdict */
+.card-header{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--border)}
+.card-pair{display:flex;flex-direction:column;gap:2px}
+.card-pair-name{font-family:var(--display);font-weight:700;font-size:16px;color:var(--bright)}
+.card-pair-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.card-category{font-size:10px;color:var(--dim)}
+.pool-badge{font-size:9px;padding:1px 5px;border-radius:2px;letter-spacing:.04em;background:rgba(61,156,255,.08);color:rgba(61,156,255,.7);border:1px solid rgba(61,156,255,.15)}
+.card-verdict{display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0}
+.verdict-badge{display:inline-flex;align-items:center;justify-content:center;padding:7px 16px;border-radius:var(--r);font-family:var(--display);font-weight:800;font-size:14px;letter-spacing:.04em;min-width:68px}
+.verdict-badge.BUY{background:var(--green-bg);color:var(--green);border:1px solid var(--green-d)}
+.verdict-badge.HOLD{background:var(--yellow-bg);color:var(--yellow);border:1px solid #a08800}
+.verdict-badge.SELL{background:var(--red-bg);color:var(--red);border:1px solid var(--red-d)}
+.confidence-bar{width:54px;height:3px;background:var(--border);border-radius:2px;overflow:hidden}
+.confidence-fill{height:100%;border-radius:2px;background:var(--accent)}
+.confidence-pct{font-size:9px;color:var(--dim);letter-spacing:.04em}
+
+/* Card body: price row */
+.card-price-row{display:flex;align-items:baseline;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border)}
+.card-price{font-size:18px;font-weight:700;color:var(--bright);font-family:var(--display)}
+.card-change{font-size:11px}
+.card-change.up{color:var(--green)} .card-change.down{color:var(--red)}
+
+/* Card body: zones 3-column grid */
+.card-zones{display:grid;grid-template-columns:1fr 1fr 1fr;border-bottom:1px solid var(--border)}
+.zone-cell{display:flex;flex-direction:column;gap:3px;padding:10px 12px;border-right:1px solid var(--border)}
+.zone-cell:last-child{border-right:none}
+.zone-cell-label{font-size:9px;color:var(--dim);letter-spacing:.08em;text-transform:uppercase}
+.zone-cell-val{font-size:12px;font-weight:700}
+.zone-cell-val.entry{color:var(--green)} .zone-cell-val.exit{color:var(--yellow)} .zone-cell-val.stop{color:var(--red)}
+
+/* Card body: indicators + rr + sparkline */
+.card-bottom{display:grid;grid-template-columns:1fr auto auto;gap:0;align-items:center}
+.card-indicators{display:flex;flex-direction:column;gap:5px;padding:10px 12px;border-right:1px solid var(--border)}
+.ind-row{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:11px}
+.ind-lbl{color:var(--dim);font-size:10px;letter-spacing:.04em}
+.ind-val{font-weight:700;font-size:11px}
+.ind-val.bullish{color:var(--green)} .ind-val.bearish{color:var(--red)} .ind-val.neutral{color:var(--yellow)}
+.card-rr{display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 14px;border-right:1px solid var(--border)}
+.rr-val{font-size:16px;font-weight:700}
+.rr-lbl{font-size:9px;color:var(--dim);letter-spacing:.04em;text-transform:uppercase}
+.card-spark{padding:10px 12px;display:flex;align-items:center}
+
+/* ── DESKTOP TABLE (≥768px) ──────────────────────────────────────────────────── */
+.table-wrapper{display:none}
+
+/* ── EXPORT PANEL ────────────────────────────────────────────────────────────── */
+.export-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);margin-top:16px;display:none;overflow:hidden}
+.export-panel-header{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:10px}
+.export-panel-title{font-family:var(--display);font-weight:700;font-size:13px;color:var(--bright)}
+.export-panel-sub{font-size:10px;color:var(--dim);margin-top:2px}
+.export-actions{display:flex;gap:8px;flex-wrap:wrap}
+.export-action-btn{padding:7px 14px;border-radius:var(--r);font-family:var(--mono);font-size:11px;cursor:pointer;border:1px solid var(--border-hi);background:transparent;color:var(--text);transition:all .15s;white-space:nowrap;-webkit-tap-highlight-color:transparent}
+.export-action-btn:active,.export-action-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-bg)}
+.export-action-btn.copied{border-color:var(--green);color:var(--green);background:var(--green-bg)}
+.export-action-btn.dl{border-color:var(--green-d);color:var(--green)}
+.export-action-btn.dl:active,.export-action-btn.dl:hover{background:var(--green-bg)}
+.export-tabs{display:flex;border-bottom:1px solid var(--border)}
+.export-tab{padding:9px 16px;font-size:11px;font-family:var(--mono);cursor:pointer;color:var(--dim);border-bottom:2px solid transparent;transition:all .15s;background:none;border-top:none;border-left:none;border-right:none;-webkit-tap-highlight-color:transparent}
+.export-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.export-body{padding:14px;overflow:auto;max-height:280px}
+.export-body pre{font-size:11px;color:var(--green);white-space:pre;line-height:1.6;font-family:var(--mono)}
+
+/* ── FOOTNOTE ────────────────────────────────────────────────────────────────── */
+.footnote{margin-top:24px;padding-top:14px;border-top:1px solid var(--border);font-size:10px;color:var(--dim);line-height:1.7}
+.footnote strong{color:var(--yellow)}
+.footnote code{background:rgba(255,255,255,.05);padding:1px 5px;border-radius:2px}
+
+/* ── TABLET / DESKTOP ────────────────────────────────────────────────────────── */
+@media(min-width:600px){
+  .main{padding:20px 24px}
+  header{padding:16px 24px}
+  .last-updated{display:block}
+}
+
+@media(min-width:768px){
+  .main{padding:24px 32px}
+  header{padding:18px 32px}
+  .logo{font-size:20px}
+  .summary-bar{display:flex;gap:0}
+
+  /* Hide cards, show table on desktop */
+  .cards-grid{display:none}
+  .table-wrapper{display:block;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;overflow-x:auto}
   table{width:100%;border-collapse:collapse}
-  thead th{text-align:left;padding:10px 14px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim);border-bottom:1px solid var(--border);white-space:nowrap}
+  thead th{text-align:left;padding:10px 14px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);border-bottom:1px solid var(--border);white-space:nowrap}
   tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
   tbody tr:hover{background:rgba(255,255,255,.013)}
-  tbody td{padding:14px 14px;vertical-align:middle}
-  .pair-name{font-family:var(--display);font-weight:600;font-size:14px;color:var(--text-bright)}
-  .pair-sub{font-size:10px;color:var(--text-dim);margin-top:2px}
-  .pool-badge{display:inline-block;font-size:9px;padding:1px 5px;border-radius:2px;margin-top:4px;letter-spacing:.05em;background:rgba(61,156,255,.08);color:rgba(61,156,255,.7);border:1px solid rgba(61,156,255,.15)}
-  .price-current{font-size:14px;color:var(--text-bright);font-weight:700}
-  .price-change{font-size:11px;margin-top:2px}
-  .price-change.up{color:var(--green)} .price-change.down{color:var(--red)}
-  .signal-zone{display:flex;flex-direction:column;gap:4px}
-  .zone-row{display:flex;align-items:center;gap:8px}
-  .zone-label{width:50px;font-size:10px;color:var(--text-dim);letter-spacing:.06em;text-transform:uppercase}
-  .zone-val{font-weight:700;font-size:12px;min-width:110px}
-  .zone-val.entry{color:var(--green)} .zone-val.exit{color:var(--yellow)} .zone-val.stop{color:var(--red)}
-  .zone-bar{flex:1;height:3px;background:var(--border);border-radius:2px;max-width:80px}
-  .zone-bar-fill{height:100%;border-radius:2px}
-  .zone-bar-fill.entry{background:var(--green)} .zone-bar-fill.exit{background:var(--yellow)} .zone-bar-fill.stop{background:var(--red)}
-  .indicators{display:flex;flex-direction:column;gap:5px;min-width:130px}
-  .indicator-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
-  .ind-name{color:var(--text-dim);font-size:10px;letter-spacing:.05em}
-  .ind-val{font-weight:700;font-size:11px}
-  .ind-val.bullish{color:var(--green)} .ind-val.bearish{color:var(--red)} .ind-val.neutral{color:var(--yellow)}
-  .verdict-cell{text-align:center}
-  .verdict-badge{display:inline-flex;align-items:center;justify-content:center;padding:8px 18px;border-radius:3px;font-family:var(--display);font-weight:800;font-size:15px;letter-spacing:.04em;min-width:72px}
-  .verdict-badge.BUY{background:var(--green-bg);color:var(--green);border:1px solid var(--green-dim)}
-  .verdict-badge.HOLD{background:var(--yellow-bg);color:var(--yellow);border:1px solid #a08800}
-  .verdict-badge.SELL{background:var(--red-bg);color:var(--red);border:1px solid var(--red-dim)}
-  .confidence-bar{width:60px;height:3px;background:var(--border);border-radius:2px;margin:6px auto 0;overflow:hidden}
-  .confidence-fill{height:100%;border-radius:2px;background:var(--accent)}
-  .confidence-pct{font-size:10px;color:var(--text-dim);margin-top:3px}
-  .rr-ratio{font-size:15px;font-weight:700} .rr-sub{font-size:10px;color:var(--text-dim);margin-top:2px}
-  .sparkline{display:block}
-  .export-section{margin-top:24px;display:none}
-  .export-box{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:16px;overflow:auto;max-height:200px}
-  .export-box pre{font-size:11px;color:var(--green);white-space:pre;line-height:1.6}
-  .footnote{margin-top:28px;padding-top:16px;border-top:1px solid var(--border);font-size:10px;color:var(--text-dim);line-height:1.7}
-  .footnote strong{color:var(--yellow)}
+  tbody td{padding:13px 14px;vertical-align:middle}
+  .t-pair-name{font-family:var(--display);font-weight:600;font-size:14px;color:var(--bright)}
+  .t-pair-sub{font-size:10px;color:var(--dim);margin-top:2px}
+  .t-price{font-size:14px;color:var(--bright);font-weight:700}
+  .t-change{font-size:11px;margin-top:2px}
+  .t-change.up{color:var(--green)} .t-change.down{color:var(--red)}
+  .t-zones{display:flex;flex-direction:column;gap:4px}
+  .t-zone-row{display:flex;align-items:center;gap:8px}
+  .t-zone-lbl{width:48px;font-size:10px;color:var(--dim);letter-spacing:.06em;text-transform:uppercase}
+  .t-zone-val{font-weight:700;font-size:12px;min-width:108px}
+  .t-zone-val.entry{color:var(--green)} .t-zone-val.exit{color:var(--yellow)} .t-zone-val.stop{color:var(--red)}
+  .t-zone-bar{flex:1;height:3px;background:var(--border);border-radius:2px;max-width:72px}
+  .t-zone-fill{height:100%;border-radius:2px}
+  .t-zone-fill.entry{background:var(--green)} .t-zone-fill.exit{background:var(--yellow)} .t-zone-fill.stop{background:var(--red)}
+  .t-inds{display:flex;flex-direction:column;gap:4px;min-width:126px}
+  .t-ind-row{display:flex;justify-content:space-between;gap:10px;font-size:11px}
+  .t-ind-lbl{color:var(--dim);font-size:10px;letter-spacing:.04em}
+  .t-ind-val{font-weight:700;font-size:11px}
+  .t-ind-val.bullish{color:var(--green)} .t-ind-val.bearish{color:var(--red)} .t-ind-val.neutral{color:var(--yellow)}
+  .t-rr{font-size:15px;font-weight:700}
+  .t-rr-sub{font-size:10px;color:var(--dim);margin-top:2px}
+  .t-verdict{text-align:center}
+}
 </style>
 </head>
 <body>
 
-<!-- CORS warning — shown when page is opened as file:// -->
 <div class="cors-banner" id="corsBanner">
-  ⚠ <strong>CORS blocked:</strong> GeckoTerminal API requires this page to be served over HTTP, not opened as a local file.
-  Run: <code>python3 -m http.server 8080</code> in the folder containing this file, then open
-  <code>http://localhost:8080/eth-analyzer.html</code>
+  ⚠ <strong>CORS blocked:</strong> serve via HTTP, not file://. Run: <code>python3 -m http.server 8080</code> then open <code>http://localhost:8080/eth-analyzer.html</code>
 </div>
 
 <header>
   <div class="logo">ETH<span>·</span>ANALYST</div>
-  <div class="header-meta">
-    <span><span class="status-dot" id="statusDot"></span><span id="statusText">IDLE</span></span>
-    <span id="lastUpdated">—</span>
-    <span>GeckoTerminal · Ethereum Mainnet · 7D OHLCV</span>
+  <div class="header-right">
+    <div class="status-pill">
+      <span class="status-dot" id="statusDot"></span>
+      <span id="statusText">IDLE</span>
+    </div>
+    <div class="last-updated" id="lastUpdated"></div>
   </div>
 </header>
 
 <div class="main">
-  <div class="controls">
-    <div class="control-group" style="flex:1;min-width:300px">
-      <div class="control-label">Preset Pairs — Ethereum Mainnet Uniswap V3</div>
-      <div class="pairs-grid" id="pairsGrid"></div>
-    </div>
+
+  <!-- PAIR TOGGLES -->
+  <div class="section-label">Preset Pairs — Ethereum Mainnet</div>
+  <div class="pairs-grid" id="pairsGrid"></div>
+
+  <!-- CUSTOM SEARCH -->
+  <div class="section-label">Add Custom Token / ETH Pair</div>
+  <div class="custom-row">
+    <input class="token-input" id="tokenInput" placeholder="Symbol or 0x address…" spellcheck="false" autocomplete="off"/>
+    <button class="search-btn" id="searchBtn" onclick="searchToken()">Search</button>
+  </div>
+  <div class="pool-picker" id="poolPicker">
+    <div class="pool-picker-hdr" id="poolPickerHdr">Select a pool</div>
+    <div id="poolPickerList"></div>
   </div>
 
-  <div class="controls" style="margin-top:-12px;margin-bottom:24px">
-    <div class="control-group">
-      <div class="control-label">Add Custom Token / ETH Pair</div>
-      <div class="custom-row">
-        <input class="token-input" id="tokenInput" placeholder="Symbol or 0x address…" spellcheck="false" autocomplete="off"/>
-        <button class="search-btn" id="searchBtn" onclick="searchToken()">Search Pools</button>
-      </div>
-      <div class="pool-picker" id="poolPicker">
-        <div class="pool-picker-hdr" id="poolPickerHdr">Select a pool</div>
-        <div id="poolPickerList"></div>
-      </div>
-    </div>
-    <div class="btn-row">
-      <button class="export-btn" id="exportBtn" onclick="showExport()">⬇ Export JSON</button>
-      <button class="run-btn" id="runBtn" onclick="runAnalysis()">▶ Run Analysis</button>
-    </div>
+  <!-- ACTION ROW -->
+  <div class="action-row">
+    <button class="run-btn" id="runBtn" onclick="runAnalysis()">▶ Run Analysis</button>
+    <button class="export-btn" id="exportBtn" onclick="openExport()">⬇ Export JSON</button>
   </div>
 
+  <!-- PROGRESS -->
   <div class="progress-bar" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
   <div class="progress-log" id="progressLog"></div>
   <div class="error-msg" id="errorMsg"></div>
 
+  <!-- RESULTS -->
   <div class="results-section" id="resultsSection">
+
+    <!-- Summary bar -->
     <div class="summary-bar" id="summaryBar"></div>
-    <div class="section-header">
-      <div>
-        <div class="section-title">Signal Report</div>
-        <div class="section-sub">Entry / Exit / Stop · 7-Day Lookback · Hourly Candles · GeckoTerminal DEX Data</div>
-      </div>
-    </div>
+
+    <!-- MOBILE: Cards -->
+    <div class="cards-grid" id="cardsGrid"></div>
+
+    <!-- DESKTOP: Table -->
     <div class="table-wrapper">
       <table>
         <thead><tr>
-          <th>Pair</th><th>Current Price</th><th>Entry / Exit / Stop</th>
-          <th>Indicators</th><th>Risk:Reward</th><th>7D Price</th><th>Verdict</th>
+          <th>Pair</th><th>Price</th><th>Entry / Exit / Stop</th>
+          <th>Indicators</th><th>R:R</th><th>7D</th><th>Verdict</th>
         </tr></thead>
-        <tbody id="resultsBody"></tbody>
+        <tbody id="tableBody"></tbody>
       </table>
     </div>
-    <div class="export-section" id="exportSection">
-      <div class="section-header" style="margin-bottom:10px">
-        <div class="section-title" style="font-size:12px">AgentKit JSON Signal Export</div>
+
+    <!-- EXPORT PANEL -->
+    <div class="export-panel" id="exportPanel">
+      <div class="export-panel-header">
+        <div>
+          <div class="export-panel-title">AgentKit Signal Export</div>
+          <div class="export-panel-sub">Formatted for Coinbase AgentKit / Uniswap DEX automation</div>
+        </div>
+        <div class="export-actions">
+          <button class="export-action-btn" id="copyBtn" onclick="copyJSON()">⎘ Copy</button>
+          <button class="export-action-btn dl" onclick="downloadJSON()">↓ Download .json</button>
+        </div>
       </div>
-      <div class="export-box"><pre id="exportJson"></pre></div>
+      <div class="export-tabs">
+        <button class="export-tab active" onclick="switchTab('full',this)">Full Export</button>
+        <button class="export-tab" onclick="switchTab('buy',this)">BUY signals only</button>
+        <button class="export-tab" onclick="switchTab('agentkit',this)">AgentKit trades</button>
+      </div>
+      <div class="export-body">
+        <pre id="exportPre"></pre>
+      </div>
     </div>
-  </div>
+
+  </div><!-- /results -->
 
   <div class="footnote">
-    <strong>⚠ NOT FINANCIAL ADVICE.</strong> Signals: RSI-14, Bollinger Bands (20,2), true OHLCV VWAP, ATR×1.5 stop, S/R clustering.
-    Data: <strong style="color:var(--text-dim)">GeckoTerminal public API</strong> (no key, ~30 req/min).
-    Requires HTTP server — open via <code style="background:rgba(255,255,255,.05);padding:1px 5px;border-radius:2px">python3 -m http.server 8080</code>.
-    Custom token search finds highest-liquidity WETH pool automatically.
-    Entry/exit are <em>suggested zones</em>. Export JSON targets Coinbase AgentKit / Uniswap automation.
+    <strong>⚠ NOT FINANCIAL ADVICE.</strong> Signals: RSI-14, Bollinger Bands (20,2), VWAP, ATR×1.5 stop, S/R clustering.
+    Data: <strong style="color:var(--dim)">GeckoTerminal public API</strong> (no key, ~30 req/min, Ethereum mainnet).
+    Requires HTTP server — not <code>file://</code>. Entry/exit are <em>suggested zones</em>, not orders.
   </div>
-</div>
+</div><!-- /main -->
 
 <script>
-// ── VERIFIED pool addresses (all Ethereum mainnet, all confirmed on GeckoTerminal) ──
+// ── CONFIG ────────────────────────────────────────────────────────────────────
+const GT_DIRECT = 'https://api.geckoterminal.com/api/v2';
+const GT_HDR    = { Accept: 'application/json;version=20230302' };
+const WORKER_URL = null; // set to your Cloudflare Worker URL if using proxy
+
+// ── VERIFIED PRESETS (Ethereum mainnet Uniswap V3, confirmed on GeckoTerminal) ─
 const PRESETS = [
-  // ETH/USDC — WETH/USDC Uniswap V3 0.05% — $71M liq
-  { symbol:'ETH/USDC', category:'Base',       dex:'Uniswap V3 0.05%', poolAddress:'0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640', quoteIsUSD:true,  currency:'token' },
-  // ARB/WETH Uniswap V3 0.3% — $35K liq (ETH mainnet)
-  { symbol:'ARB/ETH',  category:'L2',          dex:'Uniswap V3 0.3%', poolAddress:'0x59354356ec5d56306791873f567d61ebf11dfbd5', quoteIsUSD:false, currency:'token' },
-  // LINK/WETH Uniswap V3 0.3% — $34M liq
-  { symbol:'LINK/ETH', category:'Oracle',      dex:'Uniswap V3 0.3%', poolAddress:'0xa6cc3c2531fdaa6ae1a3ca84c2855806728693e8', quoteIsUSD:false, currency:'token' },
-  // UNI/WETH Uniswap V3 0.3% — $20M liq
-  { symbol:'UNI/ETH',  category:'DeFi',        dex:'Uniswap V3 0.3%', poolAddress:'0x1d42064fc4beb5f8aaf85f4617ae8b3b5b8bd801', quoteIsUSD:false, currency:'token' },
-  // AAVE/WETH Uniswap V3 0.3% — $7.5M liq
-  { symbol:'AAVE/ETH', category:'DeFi',        dex:'Uniswap V3 0.3%', poolAddress:'0x5ab53ee1d50eef2c1dd3d5402789cd27bb52c1bb', quoteIsUSD:false, currency:'token' },
-  // POL/WETH Uniswap V3 0.3% — $80K liq
-  { symbol:'POL/ETH',  category:'L2',          dex:'Uniswap V3 0.3%', poolAddress:'0x88ada7b1dd1c728ea87404cea7a0780139eb35d1', quoteIsUSD:false, currency:'token' },
-  // LDO/WETH Uniswap V3 0.3%
-  { symbol:'LDO/ETH',  category:'LST',         dex:'Uniswap V3 0.3%', poolAddress:'0xa3f558aebaecaf0e11ca4b2199cc5ed341edfd74', quoteIsUSD:false, currency:'token' },
-  // AMP/WETH Uniswap V3 0.3%
-  { symbol:'AMP/ETH',  category:'Collateral',  dex:'Uniswap V3 0.3%', poolAddress:'0x14424eeecbff345b38187d0b8b749e56faa68539', quoteIsUSD:false, currency:'token' },
+  { symbol:'ETH/USDC', category:'Base',      dex:'Uniswap V3 0.05%', poolAddress:'0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640', quoteIsUSD:true  },
+  { symbol:'ARB/ETH',  category:'L2',         dex:'Uniswap V3 0.3%',  poolAddress:'0x59354356ec5d56306791873f567d61ebf11dfbd5', quoteIsUSD:false },
+  { symbol:'LINK/ETH', category:'Oracle',     dex:'Uniswap V3 0.3%',  poolAddress:'0xa6cc3c2531fdaa6ae1a3ca84c2855806728693e8', quoteIsUSD:false },
+  { symbol:'UNI/ETH',  category:'DeFi',       dex:'Uniswap V3 0.3%',  poolAddress:'0x1d42064fc4beb5f8aaf85f4617ae8b3b5b8bd801', quoteIsUSD:false },
+  { symbol:'AAVE/ETH', category:'DeFi',       dex:'Uniswap V3 0.3%',  poolAddress:'0x5ab53ee1d50eef2c1dd3d5402789cd27bb52c1bb', quoteIsUSD:false },
+  { symbol:'POL/ETH',  category:'L2',         dex:'Uniswap V3 0.3%',  poolAddress:'0x88ada7b1dd1c728ea87404cea7a0780139eb35d1', quoteIsUSD:false },
+  { symbol:'LDO/ETH',  category:'LST',        dex:'Uniswap V3 0.3%',  poolAddress:'0xa3f558aebaecaf0e11ca4b2199cc5ed341edfd74', quoteIsUSD:false },
+  { symbol:'AMP/ETH',  category:'Collateral', dex:'Uniswap V3 0.3%',  poolAddress:'0x14424eeecbff345b38187d0b8b749e56faa68539', quoteIsUSD:false },
 ];
 
-const GT = 'https://api.geckoterminal.com/api/v2';
-const GT_HDR = { Accept: 'application/json;version=20230302' };
-
 let selectedPresets = new Set(['ETH/USDC','ARB/ETH','LINK/ETH','AMP/ETH']);
-let customPairs = [];
-let lastResults = [];
+let customPairs     = [];
+let lastResults     = [];
+let currentTab      = 'full';
 
-// ── CORS detection ────────────────────────────────────────────────────────────
-if (location.protocol === 'file:') {
-  document.getElementById('corsBanner').style.display = 'block';
-}
+// ── CORS CHECK ────────────────────────────────────────────────────────────────
+if (location.protocol === 'file:') document.getElementById('corsBanner').style.display = 'block';
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
 function init() {
@@ -251,107 +341,100 @@ function init() {
   PRESETS.forEach(p => {
     const btn = document.createElement('button');
     btn.className = 'pair-toggle' + (selectedPresets.has(p.symbol) ? ' active' : '');
-    btn.dataset.symbol = p.symbol;
     btn.textContent = p.symbol;
-    btn.onclick = () => { selectedPresets.has(p.symbol) ? selectedPresets.delete(p.symbol) : selectedPresets.add(p.symbol); btn.classList.toggle('active'); };
+    btn.onclick = () => {
+      selectedPresets.has(p.symbol) ? selectedPresets.delete(p.symbol) : selectedPresets.add(p.symbol);
+      btn.classList.toggle('active');
+    };
     grid.appendChild(btn);
   });
   document.getElementById('tokenInput').addEventListener('keydown', e => { if (e.key === 'Enter') searchToken(); });
 }
 
-// ── GECKO FETCH ───────────────────────────────────────────────────────────────
+// ── FETCH ─────────────────────────────────────────────────────────────────────
 async function gtFetch(path) {
-  const res = await fetch(GT + path, { headers: GT_HDR });
-  if (!res.ok) { const t = await res.text().catch(()=>''); throw new Error(`GeckoTerminal ${res.status} on ${path.slice(0,55)}… — ${t.slice(0,120)}`); }
+  let res;
+  if (WORKER_URL) {
+    res = await fetch(WORKER_URL + '?path=' + encodeURIComponent(path));
+  } else {
+    res = await fetch(GT_DIRECT + path, { headers: GT_HDR });
+  }
+  if (!res.ok) {
+    const t = await res.text().catch(() => '');
+    throw new Error(`GT ${res.status} — ${t.slice(0, 120)}`);
+  }
   return res.json();
 }
 
-// ── OHLCV — currency:'token' gives token0-denominated prices (correct for /ETH pairs)
-//           currency:'usd' for ETH/USDC (WETH is token0 there)
-// We always use currency:'token' which GeckoTerminal accepts.
-// For WETH/USDC pool, token0=WETH so prices come back in USDC per WETH → exactly what we want.
 async function fetchOHLCV(poolAddress) {
-  // currency=token: price expressed in the quote/counter asset
-  const url = `/networks/eth/pools/${poolAddress}/ohlcv/hour?aggregate=1&limit=168&currency=token`;
-  const data = await gtFetch(url);
+  const data = await gtFetch(`/networks/eth/pools/${poolAddress}/ohlcv/hour?aggregate=1&limit=168&currency=token`);
   const list = data?.data?.attributes?.ohlcv_list;
   if (!list || list.length < 20) throw new Error('Insufficient OHLCV data');
-  // GeckoTerminal returns newest-first → reverse to oldest-first
-  return list.slice().reverse().map(c => ({
-    open:+c[1], high:+c[2], low:+c[3], close:+c[4], volume:+c[5]
-  }));
+  return list.slice().reverse().map(c => ({ open:+c[1], high:+c[2], low:+c[3], close:+c[4], volume:+c[5] }));
 }
 
-// ── SEARCH ────────────────────────────────────────────────────────────────────
+// ── TOKEN SEARCH ──────────────────────────────────────────────────────────────
 async function searchToken() {
   const raw = document.getElementById('tokenInput').value.trim();
   if (!raw) return;
   const btn = document.getElementById('searchBtn');
-  btn.disabled = true; btn.textContent = 'Searching…';
-  const picker = document.getElementById('poolPicker');
+  btn.disabled = true; btn.textContent = '…';
   document.getElementById('poolPickerList').innerHTML = '';
-  picker.style.display = 'none';
+  document.getElementById('poolPicker').style.display = 'none';
 
   try {
     const isAddr = /^0x[0-9a-fA-F]{40}$/.test(raw);
-    let pools = [];
-    if (isAddr) {
-      const data = await gtFetch(`/networks/eth/tokens/${raw.toLowerCase()}/pools?include=base_token,quote_token,dex`);
-      pools = data?.data || [];
-    } else {
-      const data = await gtFetch(`/search/pools?query=${encodeURIComponent(raw)}&network=eth&include=base_token,quote_token,dex`);
-      pools = data?.data || [];
-    }
-    if (!pools.length) { showErr(`No pools found for "${raw}" on Ethereum mainnet.`); return; }
+    const data = isAddr
+      ? await gtFetch(`/networks/eth/tokens/${raw.toLowerCase()}/pools?include=base_token,quote_token,dex`)
+      : await gtFetch(`/search/pools?query=${encodeURIComponent(raw)}&network=eth&include=base_token,quote_token,dex`);
+    const pools = data?.data || [];
+    if (!pools.length) { showErr(`No pools found for "${raw}".`); return; }
 
-    // Prefer WETH-paired
-    const WETH_ADDR = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2';
-    const wethPools = pools.filter(p => {
-      const rel = p.relationships;
-      return [rel?.base_token?.data?.id, rel?.quote_token?.data?.id]
-        .some(id => id?.toLowerCase().includes(WETH_ADDR));
-    });
-    const display = (wethPools.length ? wethPools : pools).slice(0, 6);
+    const WETH = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2';
+    const wethPools = pools.filter(p =>
+      [p.relationships?.base_token?.data?.id, p.relationships?.quote_token?.data?.id]
+        .some(id => id?.toLowerCase().includes(WETH))
+    );
+    const display = (wethPools.length ? wethPools : pools).slice(0, 5);
 
-    document.getElementById('poolPickerHdr').textContent = `${display.length} pool${display.length>1?'s':''} found — pick one to add`;
+    document.getElementById('poolPickerHdr').textContent =
+      `${display.length} pool${display.length > 1 ? 's' : ''} found — select one`;
+
     display.forEach(pool => {
       const attr = pool.attributes;
-      const name = attr.name || pool.id;
+      const addr = attr.address;
+      const name = attr.name || addr;
       const vol  = attr.volume_usd?.h24 ? '$' + compact(+attr.volume_usd.h24) : '—';
       const liq  = attr.reserve_in_usd  ? '$' + compact(+attr.reserve_in_usd)  : '—';
-      const addr = attr.address;
       const dexId = pool.relationships?.dex?.data?.id || '';
-      const dexName = dexId.split('_').map(w=>w[0]?.toUpperCase()+w.slice(1)).join(' ') || 'Unknown DEX';
+      const dexName = dexId.split('_').map(w => w[0]?.toUpperCase() + w.slice(1)).join(' ') || 'Unknown DEX';
 
       const row = document.createElement('div');
       row.className = 'pool-opt';
       row.innerHTML = `
-        <div>
-          <div class="pool-name">${name}</div>
-          <div class="pool-dex">${dexName} · ${addr.slice(0,8)}…${addr.slice(-6)}</div>
-        </div>
-        <div class="pool-meta">
-          <span>Vol 24h <span style="color:var(--text)">${vol}</span></span>
-          <span>Liq <span style="color:var(--green)">${liq}</span></span>
+        <div class="pool-opt-info">
+          <div class="pool-opt-name">${name}</div>
+          <div class="pool-opt-dex">${dexName} · ${addr.slice(0,8)}…${addr.slice(-6)}</div>
+          <div class="pool-opt-meta">
+            <span>Vol 24h <strong style="color:var(--text)">${vol}</strong></span>
+            <span>Liq <strong style="color:var(--green)">${liq}</strong></span>
+          </div>
         </div>
         <button class="pool-add-btn">+ Add</button>`;
       row.querySelector('.pool-add-btn').onclick = () => addPool(pool, name, dexName);
       document.getElementById('poolPickerList').appendChild(row);
     });
-    picker.style.display = 'block';
+    document.getElementById('poolPicker').style.display = 'block';
   } catch(err) { showErr(err.message); }
-  finally { btn.disabled = false; btn.textContent = 'Search Pools'; }
+  finally { btn.disabled = false; btn.textContent = 'Search'; }
 }
 
 function addPool(pool, name, dexName) {
   const addr = pool.attributes.address;
-  if (customPairs.some(p => p.poolAddress.toLowerCase() === addr.toLowerCase())) {
-    closeSearch(); return;
-  }
+  if (customPairs.some(p => p.poolAddress.toLowerCase() === addr.toLowerCase())) { closeSearch(); return; }
   const quoteIsUSD = /usdc|usdt|dai/i.test(name);
-  const label = name.split(' 0')[0].replace(/ \/ /g,'/').replace(/ \//,'/');
-  const custom = { symbol:label, category:'Custom', poolAddress:addr, quoteIsUSD, dex:dexName, currency:'token', isCustom:true };
-  customPairs.push(custom);
+  const label = name.split(' 0')[0].replace(/ \/ /g, '/').replace(/ \//, '/');
+  customPairs.push({ symbol:label, category:'Custom', poolAddress:addr, quoteIsUSD, dex:dexName });
 
   const btn = document.createElement('button');
   btn.className = 'pair-toggle active';
@@ -368,75 +451,79 @@ function closeSearch() {
 
 // ── INDICATORS ────────────────────────────────────────────────────────────────
 function calcRSI(c, p=14) {
-  if (c.length<p+1) return null;
-  let ag=0,al=0;
-  for(let i=1;i<=p;i++){const d=c[i]-c[i-1];d>=0?ag+=d:al-=d;}
+  if (c.length < p+1) return null;
+  let ag=0, al=0;
+  for (let i=1;i<=p;i++) { const d=c[i]-c[i-1]; d>=0?ag+=d:al-=d; }
   ag/=p; al/=p;
-  for(let i=p+1;i<c.length;i++){const d=c[i]-c[i-1];ag=(ag*(p-1)+(d>0?d:0))/p;al=(al*(p-1)+(d<0?-d:0))/p;}
+  for (let i=p+1;i<c.length;i++) {
+    const d=c[i]-c[i-1];
+    ag=(ag*(p-1)+(d>0?d:0))/p;
+    al=(al*(p-1)+(d<0?-d:0))/p;
+  }
   return al===0?100:100-100/(1+ag/al);
 }
-function calcBoll(c,p=20,m=2){
-  if(c.length<p)return null;
-  const sl=c.slice(-p),mean=sl.reduce((a,b)=>a+b,0)/p;
+function calcBoll(c, p=20, m=2) {
+  if (c.length<p) return null;
+  const sl=c.slice(-p), mean=sl.reduce((a,b)=>a+b,0)/p;
   const std=Math.sqrt(sl.reduce((a,b)=>a+(b-mean)**2,0)/p);
-  return{upper:mean+m*std,middle:mean,lower:mean-m*std};
+  return { upper:mean+m*std, middle:mean, lower:mean-m*std };
 }
-function calcVWAP(cs){
-  let tv=0,v=0;cs.forEach(c=>{const tp=(c.high+c.low+c.close)/3;tv+=tp*c.volume;v+=c.volume;});
-  return v>0?tv/v:cs[cs.length-1].close;
+function calcVWAP(cs) {
+  let tv=0, v=0;
+  cs.forEach(c=>{ const tp=(c.high+c.low+c.close)/3; tv+=tp*c.volume; v+=c.volume; });
+  return v>0 ? tv/v : cs[cs.length-1].close;
 }
-function calcATR(cs,p=14){
+function calcATR(cs, p=14) {
   const trs=cs.slice(1).map((c,i)=>Math.max(c.high-c.low,Math.abs(c.high-cs[i].close),Math.abs(c.low-cs[i].close)));
-  const r=trs.slice(-p);return r.reduce((a,b)=>a+b,0)/r.length;
+  const r=trs.slice(-p); return r.reduce((a,b)=>a+b,0)/r.length;
 }
-function findSR(cs){
-  const w=4,sups=[],ress=[];
-  for(let i=w;i<cs.length-w;i++){
+function findSR(cs) {
+  const w=4, sups=[], ress=[];
+  for (let i=w;i<cs.length-w;i++) {
     const near=cs.slice(i-w,i+w+1);
-    if(cs[i].low===Math.min(...near.map(c=>c.low)))sups.push(cs[i].low);
-    if(cs[i].high===Math.max(...near.map(c=>c.high)))ress.push(cs[i].high);
+    if (cs[i].low ===Math.min(...near.map(c=>c.low)))  sups.push(cs[i].low);
+    if (cs[i].high===Math.max(...near.map(c=>c.high))) ress.push(cs[i].high);
   }
-  return{supports:cluster(sups),resistances:cluster(ress)};
+  return { supports:cluster(sups), resistances:cluster(ress) };
 }
-function cluster(lvls,thr=0.015){
-  if(!lvls.length)return[];
-  const s=[...lvls].sort((a,b)=>a-b);const out=[];let g=[s[0]];
-  for(let i=1;i<s.length;i++){
-    if(g[0]>0&&(s[i]-g[0])/g[0]<thr)g.push(s[i]);
-    else{out.push(g.reduce((a,b)=>a+b)/g.length);g=[s[i]];}
+function cluster(lvls, thr=0.015) {
+  if (!lvls.length) return [];
+  const s=[...lvls].sort((a,b)=>a-b); const out=[]; let g=[s[0]];
+  for (let i=1;i<s.length;i++) {
+    if (g[0]>0&&(s[i]-g[0])/g[0]<thr) g.push(s[i]);
+    else { out.push(g.reduce((a,b)=>a+b)/g.length); g=[s[i]]; }
   }
-  out.push(g.reduce((a,b)=>a+b)/g.length);return out;
+  out.push(g.reduce((a,b)=>a+b)/g.length); return out;
 }
 
 // ── ANALYZE ───────────────────────────────────────────────────────────────────
 function analyze(candles, pair) {
-  const closes=candles.map(c=>c.close);
-  const current=closes[closes.length-1],oldest=closes[0];
-  const change7d=((current-oldest)/oldest)*100;
-  const rsi=calcRSI(closes),boll=calcBoll(closes),vwap=calcVWAP(candles),atr=calcATR(candles);
-  const{supports,resistances}=findSR(candles);
+  const closes  = candles.map(c=>c.close);
+  const current = closes[closes.length-1], oldest=closes[0];
+  const change7d = ((current-oldest)/oldest)*100;
+  const rsi=calcRSI(closes), boll=calcBoll(closes), vwap=calcVWAP(candles), atr=calcATR(candles);
+  const {supports,resistances}=findSR(candles);
 
   const supBelow=supports.filter(s=>s<=current*1.02);
   const resAbove=resistances.filter(r=>r>=current*0.98);
-  let entry=supBelow.length?Math.max(...supBelow):(boll?boll.lower:current*0.95);
+  let entry=supBelow.length?Math.max(...supBelow):(boll?boll.lower:current*.95);
   let exit =resAbove.length?Math.min(...resAbove):(boll?boll.upper:current*1.08);
-
-  if(boll){
-    if(boll.lower<current&&boll.lower>entry*.98)entry=(entry+boll.lower)/2;
-    if(boll.upper>current&&boll.upper<exit*1.02)exit=(exit+boll.upper)/2;
+  if (boll) {
+    if (boll.lower<current&&boll.lower>entry*.98) entry=(entry+boll.lower)/2;
+    if (boll.upper>current&&boll.upper<exit*1.02) exit=(exit+boll.upper)/2;
   }
-  if(rsi&&rsi>50)entry*=0.99;
+  if (rsi&&rsi>50) entry*=0.99;
   const stop=entry-atr*1.5;
-  const risk=Math.max(entry-stop,1e-18),rr=(exit-entry)/risk;
+  const risk=Math.max(entry-stop,1e-18), rr=(exit-entry)/risk;
 
-  let score=0,signals=[],rsiSig='neutral',bollSig='neutral',vwapSig='neutral';
-  if(rsi!==null){
+  let score=0, signals=[], rsiSig='neutral', bollSig='neutral', vwapSig='neutral';
+  if (rsi!==null) {
     if(rsi<30){score+=2;rsiSig='bullish';signals.push('RSI oversold');}
     else if(rsi<45){score+=1;rsiSig='bullish';}
     else if(rsi>70){score-=2;rsiSig='bearish';signals.push('RSI overbought');}
     else if(rsi>60){score-=1;rsiSig='bearish';}
   }
-  if(boll){
+  if (boll) {
     const pct=(current-boll.lower)/(boll.upper-boll.lower);
     if(pct<0.2){score+=2;bollSig='bullish';signals.push('Near BB lower');}
     else if(pct<0.35){score+=1;bollSig='bullish';}
@@ -446,50 +533,106 @@ function analyze(candles, pair) {
   if(current<vwap*.99){score+=1;vwapSig='bullish';signals.push('Below VWAP');}
   else if(current>vwap*1.01){score-=1;vwapSig='bearish';}
   if(change7d<-8){score+=1;signals.push('7D dip');}
-  else if(change7d>15)score-=1;
+  else if(change7d>15) score-=1;
 
-  return{pair,current,change7d,entry,exit,stop,rsi,boll,vwap,atr,rr,
-    rsiSig,bollSig,vwapSig,
-    verdict:score>=3?'BUY':score<=-2?'SELL':'HOLD',
-    confidence:Math.min(100,Math.max(0,50+score*10)),
-    signals,closes};
+  return { pair, current, change7d, entry, exit, stop, rsi, boll, vwap, atr, rr,
+    rsiSig, bollSig, vwapSig,
+    verdict:    score>=3?'BUY':score<=-2?'SELL':'HOLD',
+    confidence: Math.min(100,Math.max(0,50+score*10)),
+    signals, closes };
 }
 
-// ── RENDER ────────────────────────────────────────────────────────────────────
-function fmtP(p,isUSD){
-  if(isUSD){if(p>1000)return'$'+p.toLocaleString('en',{maximumFractionDigits:2});if(p>1)return'$'+p.toFixed(3);return'$'+p.toFixed(5);}
-  if(p<.000001)return p.toExponential(3)+' Ξ';if(p<.001)return p.toFixed(7)+' Ξ';if(p<.01)return p.toFixed(5)+' Ξ';return p.toFixed(4)+' Ξ';
+// ── FORMAT HELPERS ────────────────────────────────────────────────────────────
+function fmtP(p, isUSD) {
+  if (isUSD) {
+    if(p>1000) return '$'+p.toLocaleString('en',{maximumFractionDigits:2});
+    if(p>1)    return '$'+p.toFixed(3);
+    return '$'+p.toFixed(5);
+  }
+  if(p<.000001) return p.toExponential(3)+' Ξ';
+  if(p<.001)    return p.toFixed(7)+' Ξ';
+  if(p<.01)     return p.toFixed(5)+' Ξ';
+  return p.toFixed(4)+' Ξ';
 }
 function compact(n){if(n>=1e9)return(n/1e9).toFixed(2)+'B';if(n>=1e6)return(n/1e6).toFixed(2)+'M';if(n>=1e3)return(n/1e3).toFixed(1)+'K';return n.toFixed(0);}
-function sparkline(closes,ch){
-  const w=90,h=36,mn=Math.min(...closes),mx=Math.max(...closes),rng=mx-mn||1;
-  const step=Math.max(1,Math.floor(closes.length/40));const pts=[];
-  for(let i=0;i<closes.length;i+=step)pts.push(closes[i]);
+function sparkSVG(closes, change7d, w=80, h=32) {
+  const mn=Math.min(...closes),mx=Math.max(...closes),rng=mx-mn||1;
+  const step=Math.max(1,Math.floor(closes.length/36)); const pts=[];
+  for(let i=0;i<closes.length;i+=step) pts.push(closes[i]);
   const ps=pts.map((p,i)=>`${(i/(pts.length-1))*w},${h-((p-mn)/rng)*h}`).join(' ');
-  return`<svg width="${w}" height="${h}"><polyline points="${ps}" fill="none" stroke="${ch>=0?'#00e5a0':'#ff4d6a'}" stroke-width="1.5" stroke-linejoin="round"/></svg>`;
+  return `<svg width="${w}" height="${h}" style="display:block"><polyline points="${ps}" fill="none" stroke="${change7d>=0?'#00e5a0':'#ff4d6a'}" stroke-width="1.5" stroke-linejoin="round"/></svg>`;
 }
 
-function renderRow(r){
-  const fp=v=>fmtP(v,r.pair.quoteIsUSD);
-  const ep=Math.min(100,Math.max(5,((r.entry-r.stop)/Math.max(r.exit-r.stop,1e-18))*100));
-  const rrC=r.rr>=2?'var(--green)':r.rr>=1?'var(--yellow)':'var(--red)';
-  const up=r.change7d>=0;
-  return`<tr>
-    <td><div class="pair-name">${r.pair.symbol}</div><div class="pair-sub">${r.pair.category}</div><div class="pool-badge">${r.pair.dex}</div></td>
-    <td><div class="price-current">${fp(r.current)}</div><div class="price-change ${up?'up':'down'}">${up?'+':''}${r.change7d.toFixed(2)}% 7D</div></td>
-    <td><div class="signal-zone">
-      <div class="zone-row"><span class="zone-label">ENTRY</span><span class="zone-val entry">${fp(r.entry)}</span><div class="zone-bar"><div class="zone-bar-fill entry" style="width:${ep}%"></div></div></div>
-      <div class="zone-row"><span class="zone-label">EXIT</span><span class="zone-val exit">${fp(r.exit)}</span><div class="zone-bar"><div class="zone-bar-fill exit" style="width:100%"></div></div></div>
-      <div class="zone-row"><span class="zone-label">STOP</span><span class="zone-val stop">${fp(r.stop)}</span><div class="zone-bar"><div class="zone-bar-fill stop" style="width:30%"></div></div></div>
+// ── RENDER: MOBILE CARD ───────────────────────────────────────────────────────
+function renderCard(r) {
+  const fp = v => fmtP(v, r.pair.quoteIsUSD);
+  const up = r.change7d >= 0;
+  const rrC = r.rr>=2?'var(--green)':r.rr>=1?'var(--yellow)':'var(--red)';
+  const bb = r.boll ? (((r.current-r.boll.lower)/(r.boll.upper-r.boll.lower))*100).toFixed(0)+'%' : '—';
+  const vwapD = r.vwap ? (((r.current-r.vwap)/r.vwap)*100).toFixed(2)+'%' : '—';
+  return `<div class="signal-card">
+    <div class="card-header">
+      <div class="card-pair">
+        <div class="card-pair-name">${r.pair.symbol}</div>
+        <div class="card-pair-meta">
+          <span class="card-category">${r.pair.category}</span>
+          <span class="pool-badge">${r.pair.dex}</span>
+        </div>
+      </div>
+      <div class="card-verdict">
+        <div class="verdict-badge ${r.verdict}">${r.verdict}</div>
+        <div class="confidence-bar"><div class="confidence-fill" style="width:${r.confidence}%"></div></div>
+        <div class="confidence-pct">${r.confidence}% conf</div>
+      </div>
+    </div>
+    <div class="card-price-row">
+      <div class="card-price">${fp(r.current)}</div>
+      <div class="card-change ${up?'up':'down'}">${up?'+':''}${r.change7d.toFixed(2)}% 7D</div>
+    </div>
+    <div class="card-zones">
+      <div class="zone-cell"><div class="zone-cell-label">Entry</div><div class="zone-cell-val entry">${fp(r.entry)}</div></div>
+      <div class="zone-cell"><div class="zone-cell-label">Exit</div><div class="zone-cell-val exit">${fp(r.exit)}</div></div>
+      <div class="zone-cell"><div class="zone-cell-label">Stop</div><div class="zone-cell-val stop">${fp(r.stop)}</div></div>
+    </div>
+    <div class="card-bottom">
+      <div class="card-indicators">
+        <div class="ind-row"><span class="ind-lbl">RSI-14</span><span class="ind-val ${r.rsiSig}">${r.rsi!==null?r.rsi.toFixed(1):'—'}</span></div>
+        <div class="ind-row"><span class="ind-lbl">BB %</span><span class="ind-val ${r.bollSig}">${bb}</span></div>
+        <div class="ind-row"><span class="ind-lbl">VWAP Δ</span><span class="ind-val ${r.vwapSig}">${vwapD}</span></div>
+      </div>
+      <div class="card-rr">
+        <div class="rr-val" style="color:${rrC}">${r.rr>0?r.rr.toFixed(2)+'x':'—'}</div>
+        <div class="rr-lbl">R:R</div>
+      </div>
+      <div class="card-spark">${sparkSVG(r.closes,r.change7d)}</div>
+    </div>
+  </div>`;
+}
+
+// ── RENDER: DESKTOP TABLE ROW ─────────────────────────────────────────────────
+function renderTableRow(r) {
+  const fp = v => fmtP(v, r.pair.quoteIsUSD);
+  const up = r.change7d >= 0;
+  const ep = Math.min(100,Math.max(5,((r.entry-r.stop)/Math.max(r.exit-r.stop,1e-18))*100));
+  const rrC = r.rr>=2?'var(--green)':r.rr>=1?'var(--yellow)':'var(--red)';
+  const bb = r.boll ? (((r.current-r.boll.lower)/(r.boll.upper-r.boll.lower))*100).toFixed(0)+'%' : '—';
+  const vwapD = r.vwap ? (((r.current-r.vwap)/r.vwap)*100).toFixed(2)+'%' : '—';
+  return `<tr>
+    <td><div class="t-pair-name">${r.pair.symbol}</div><div class="t-pair-sub">${r.pair.category}</div><div class="pool-badge">${r.pair.dex}</div></td>
+    <td><div class="t-price">${fp(r.current)}</div><div class="t-change ${up?'up':'down'}">${up?'+':''}${r.change7d.toFixed(2)}% 7D</div></td>
+    <td><div class="t-zones">
+      <div class="t-zone-row"><span class="t-zone-lbl">ENTRY</span><span class="t-zone-val entry">${fp(r.entry)}</span><div class="t-zone-bar"><div class="t-zone-fill entry" style="width:${ep}%"></div></div></div>
+      <div class="t-zone-row"><span class="t-zone-lbl">EXIT</span><span class="t-zone-val exit">${fp(r.exit)}</span><div class="t-zone-bar"><div class="t-zone-fill exit" style="width:100%"></div></div></div>
+      <div class="t-zone-row"><span class="t-zone-lbl">STOP</span><span class="t-zone-val stop">${fp(r.stop)}</span><div class="t-zone-bar"><div class="t-zone-fill stop" style="width:30%"></div></div></div>
     </div></td>
-    <td><div class="indicators">
-      <div class="indicator-row"><span class="ind-name">RSI-14</span><span class="ind-val ${r.rsiSig}">${r.rsi!==null?r.rsi.toFixed(1):'—'}</span></div>
-      <div class="indicator-row"><span class="ind-name">BB %</span><span class="ind-val ${r.bollSig}">${r.boll?(((r.current-r.boll.lower)/(r.boll.upper-r.boll.lower))*100).toFixed(0)+'%':'—'}</span></div>
-      <div class="indicator-row"><span class="ind-name">VWAP Δ</span><span class="ind-val ${r.vwapSig}">${r.vwap?(((r.current-r.vwap)/r.vwap)*100).toFixed(2)+'%':'—'}</span></div>
+    <td><div class="t-inds">
+      <div class="t-ind-row"><span class="t-ind-lbl">RSI-14</span><span class="t-ind-val ${r.rsiSig}">${r.rsi!==null?r.rsi.toFixed(1):'—'}</span></div>
+      <div class="t-ind-row"><span class="t-ind-lbl">BB %</span><span class="t-ind-val ${r.bollSig}">${bb}</span></div>
+      <div class="t-ind-row"><span class="t-ind-lbl">VWAP Δ</span><span class="t-ind-val ${r.vwapSig}">${vwapD}</span></div>
     </div></td>
-    <td><div class="rr-ratio" style="color:${rrC}">${r.rr>0?r.rr.toFixed(2)+'x':'—'}</div><div class="rr-sub">R:R ratio</div></td>
-    <td>${sparkline(r.closes,r.change7d)}</td>
-    <td class="verdict-cell">
+    <td><div class="t-rr" style="color:${rrC}">${r.rr>0?r.rr.toFixed(2)+'x':'—'}</div><div class="t-rr-sub">R:R ratio</div></td>
+    <td>${sparkSVG(r.closes,r.change7d)}</td>
+    <td class="t-verdict">
       <div class="verdict-badge ${r.verdict}">${r.verdict}</div>
       <div class="confidence-bar"><div class="confidence-fill" style="width:${r.confidence}%"></div></div>
       <div class="confidence-pct">${r.confidence}% conf</div>
@@ -497,88 +640,238 @@ function renderRow(r){
   </tr>`;
 }
 
-function renderSummary(rs){
-  const b=rs.filter(r=>r.verdict==='BUY').length,h=rs.filter(r=>r.verdict==='HOLD').length,s=rs.filter(r=>r.verdict==='SELL').length;
-  const vr=rs.filter(r=>r.rr>0);const ar=vr.length?vr.reduce((a,r)=>a+r.rr,0)/vr.length:0;
-  return`<div class="summary-stat"><div class="summary-stat-val" style="color:var(--green)">${b}</div><div class="summary-stat-label">BUY</div></div>
-  <div class="vdivider"></div><div class="summary-stat"><div class="summary-stat-val" style="color:var(--yellow)">${h}</div><div class="summary-stat-label">HOLD</div></div>
-  <div class="vdivider"></div><div class="summary-stat"><div class="summary-stat-val" style="color:var(--red)">${s}</div><div class="summary-stat-label">SELL</div></div>
-  <div class="vdivider"></div><div class="summary-stat"><div class="summary-stat-val">${ar.toFixed(2)}x</div><div class="summary-stat-label">Avg R:R</div></div>
-  <div class="vdivider"></div><div class="summary-stat"><div class="summary-stat-val">${rs.length}</div><div class="summary-stat-label">Pairs</div></div>`;
+// ── SUMMARY BAR ───────────────────────────────────────────────────────────────
+function renderSummary(rs) {
+  const b=rs.filter(r=>r.verdict==='BUY').length;
+  const h=rs.filter(r=>r.verdict==='HOLD').length;
+  const s=rs.filter(r=>r.verdict==='SELL').length;
+  const vr=rs.filter(r=>r.rr>0);
+  const ar=vr.length?vr.reduce((a,r)=>a+r.rr,0)/vr.length:0;
+  return `
+    <div class="summary-stat"><div class="summary-val" style="color:var(--green)">${b}</div><div class="summary-lbl">BUY</div></div>
+    <div class="summary-stat"><div class="summary-val" style="color:var(--yellow)">${h}</div><div class="summary-lbl">HOLD</div></div>
+    <div class="summary-stat"><div class="summary-val" style="color:var(--red)">${s}</div><div class="summary-lbl">SELL</div></div>
+    <div class="summary-stat"><div class="summary-val">${ar.toFixed(2)}x</div><div class="summary-lbl">Avg R:R</div></div>
+    <div class="summary-stat"><div class="summary-val">${rs.length}</div><div class="summary-lbl">Pairs</div></div>`;
 }
 
-function showExport(){
-  document.getElementById('exportJson').textContent=JSON.stringify({
-    version:'1.0',source:'eth-analyst-gt',generatedAt:new Date().toISOString(),
-    signals:lastResults.map(r=>({
-      pair:r.pair.symbol,poolAddress:r.pair.poolAddress,dex:r.pair.dex,quoteIsUSD:r.pair.quoteIsUSD,
-      currentPrice:+r.current.toPrecision(6),entry:+r.entry.toPrecision(6),exit:+r.exit.toPrecision(6),
-      stopLoss:+r.stop.toPrecision(6),rrRatio:+r.rr.toFixed(3),verdict:r.verdict,confidence:r.confidence,
-      rsi14:r.rsi!==null?+r.rsi.toFixed(2):null,signals:r.signals
-    }))
-  },null,2);
-  const s=document.getElementById('exportSection');s.style.display=s.style.display==='block'?'none':'block';
+// ── JSON BUILDERS ─────────────────────────────────────────────────────────────
+function buildSignal(r) {
+  return {
+    pair:         r.pair.symbol,
+    poolAddress:  r.pair.poolAddress,
+    dex:          r.pair.dex,
+    quoteIsUSD:   r.pair.quoteIsUSD,
+    currentPrice: +r.current.toPrecision(6),
+    entry:        +r.entry.toPrecision(6),
+    exit:         +r.exit.toPrecision(6),
+    stopLoss:     +r.stop.toPrecision(6),
+    rrRatio:      +r.rr.toFixed(3),
+    verdict:      r.verdict,
+    confidence:   r.confidence,
+    rsi14:        r.rsi !== null ? +r.rsi.toFixed(2) : null,
+    signals:      r.signals,
+  };
 }
 
-function setProgress(pct,msg){
-  document.getElementById('progressFill').style.width=pct+'%';
-  if(msg)document.getElementById('progressLog').innerHTML=`<span class="tick">▸</span>${msg}`;
+// Full export: metadata + all signals
+function buildFull(results) {
+  return {
+    version:     '1.0',
+    source:      'eth-analyst',
+    generatedAt: new Date().toISOString(),
+    signals:     results.map(buildSignal),
+  };
 }
-function setStatus(s){
-  const dot=document.getElementById('statusDot'),txt=document.getElementById('statusText');
-  if(s==='live'){dot.className='status-dot live';txt.textContent='FETCHING';}
-  else if(s==='done'){dot.className='status-dot live';txt.textContent='LIVE';}
-  else{dot.className='status-dot';txt.textContent='IDLE';}
+
+// BUY-only: filtered + sorted by confidence
+function buildBuyOnly(results) {
+  return {
+    version:     '1.0',
+    source:      'eth-analyst',
+    generatedAt: new Date().toISOString(),
+    filter:      'BUY signals only',
+    signals:     results
+      .filter(r => r.verdict === 'BUY')
+      .sort((a, b) => b.confidence - a.confidence)
+      .map(buildSignal),
+  };
 }
-function showErr(msg){const e=document.getElementById('errorMsg');e.style.display='block';e.innerHTML=`<strong>Error:</strong> ${msg}`;}
+
+// AgentKit trades: shaped for Coinbase AgentKit / Uniswap execution
+// Each trade has the exact fields AgentKit needs to call swap() on Uniswap V3
+function buildAgentKit(results) {
+  const WETH_ADDRESS = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2';
+  const USDC_ADDRESS = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48';
+
+  const trades = results
+    .filter(r => r.verdict === 'BUY' && r.rr >= 1.5)
+    .sort((a, b) => b.confidence - a.confidence)
+    .map(r => {
+      // For X/ETH pairs: buying token with WETH. For ETH/USDC: buying WETH with USDC.
+      const inputToken  = r.pair.quoteIsUSD ? USDC_ADDRESS : WETH_ADDRESS;
+      const inputSymbol = r.pair.quoteIsUSD ? 'USDC' : 'WETH';
+      return {
+        action:        'swap',
+        protocol:      'uniswap_v3',
+        poolAddress:   r.pair.poolAddress,
+        pair:          r.pair.symbol,
+        inputToken:    inputToken,
+        inputSymbol:   inputSymbol,
+        entryPrice:    +r.entry.toPrecision(6),
+        exitTarget:    +r.exit.toPrecision(6),
+        stopLoss:      +r.stop.toPrecision(6),
+        rrRatio:       +r.rr.toFixed(3),
+        confidence:    r.confidence,
+        signals:       r.signals,
+        // Suggested slippage tolerance for Uniswap V3 call
+        slippageBps:   r.pair.quoteIsUSD ? 5 : 30,
+        // Note: amountIn is left for the AgentKit agent to determine from wallet balance
+        amountIn:      'AGENT_DETERMINED',
+        generatedAt:   new Date().toISOString(),
+      };
+    });
+
+  return {
+    version:       '1.0',
+    source:        'eth-analyst',
+    generatedAt:   new Date().toISOString(),
+    description:   'AgentKit-ready trade instructions. BUY signals with R:R >= 1.5 only.',
+    wethAddress:   WETH_ADDRESS,
+    usdcAddress:   USDC_ADDRESS,
+    trades,
+  };
+}
+
+// ── EXPORT PANEL ──────────────────────────────────────────────────────────────
+function openExport() {
+  document.getElementById('exportPanel').style.display = 'block';
+  document.getElementById('exportPanel').scrollIntoView({ behavior:'smooth', block:'nearest' });
+  renderExportTab(currentTab);
+}
+
+function switchTab(tab, el) {
+  currentTab = tab;
+  document.querySelectorAll('.export-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderExportTab(tab);
+}
+
+function renderExportTab(tab) {
+  let data;
+  if      (tab === 'full')      data = buildFull(lastResults);
+  else if (tab === 'buy')       data = buildBuyOnly(lastResults);
+  else if (tab === 'agentkit')  data = buildAgentKit(lastResults);
+  document.getElementById('exportPre').textContent = JSON.stringify(data, null, 2);
+  // Reset copy button
+  const cb = document.getElementById('copyBtn');
+  cb.textContent = '⎘ Copy'; cb.classList.remove('copied');
+}
+
+function getCurrentJSON() {
+  let data;
+  if      (currentTab === 'full')     data = buildFull(lastResults);
+  else if (currentTab === 'buy')      data = buildBuyOnly(lastResults);
+  else if (currentTab === 'agentkit') data = buildAgentKit(lastResults);
+  return JSON.stringify(data, null, 2);
+}
+
+async function copyJSON() {
+  try {
+    await navigator.clipboard.writeText(getCurrentJSON());
+    const btn = document.getElementById('copyBtn');
+    btn.textContent = '✓ Copied'; btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = '⎘ Copy'; btn.classList.remove('copied'); }, 2000);
+  } catch(e) {
+    // Fallback for older mobile browsers
+    const ta = document.createElement('textarea');
+    ta.value = getCurrentJSON();
+    ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0';
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
+    const btn = document.getElementById('copyBtn');
+    btn.textContent = '✓ Copied'; btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = '⎘ Copy'; btn.classList.remove('copied'); }, 2000);
+  }
+}
+
+function downloadJSON() {
+  const tabNames = { full:'eth-analyst-signals', buy:'eth-analyst-buy', agentkit:'eth-analyst-agentkit' };
+  const filename = `${tabNames[currentTab]}-${new Date().toISOString().slice(0,10)}.json`;
+  const blob = new Blob([getCurrentJSON()], { type:'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+
+// ── PROGRESS / STATUS ─────────────────────────────────────────────────────────
+function setProgress(pct, msg) {
+  document.getElementById('progressFill').style.width = pct + '%';
+  if (msg) document.getElementById('progressLog').innerHTML = `<span class="tick">▸</span>${msg}`;
+}
+function setStatus(s) {
+  const dot=document.getElementById('statusDot'), txt=document.getElementById('statusText');
+  if      (s==='live') { dot.className='status-dot live'; txt.textContent='FETCHING'; }
+  else if (s==='done') { dot.className='status-dot live'; txt.textContent='LIVE'; }
+  else                 { dot.className='status-dot';      txt.textContent='IDLE'; }
+}
+function showErr(msg) {
+  const e=document.getElementById('errorMsg'); e.style.display='block'; e.innerHTML=`<strong>Error:</strong> ${msg}`;
+}
 
 // ── MAIN ──────────────────────────────────────────────────────────────────────
-async function runAnalysis(){
-  const all=[...PRESETS.filter(p=>selectedPresets.has(p.symbol)),...customPairs];
-  if(!all.length){alert('Select at least one pair.');return;}
+async function runAnalysis() {
+  const all = [...PRESETS.filter(p=>selectedPresets.has(p.symbol)), ...customPairs];
+  if (!all.length) { alert('Select at least one pair.'); return; }
 
-  const btn=document.getElementById('runBtn');
-  btn.disabled=true;btn.textContent='⏳ Analyzing…';
-  document.getElementById('progressBar').style.display='block';
-  document.getElementById('progressLog').style.display='block';
-  document.getElementById('errorMsg').style.display='none';
-  document.getElementById('resultsSection').style.display='none';
-  document.getElementById('exportBtn').style.display='none';
-  document.getElementById('exportSection').style.display='none';
+  const btn = document.getElementById('runBtn');
+  btn.disabled = true; btn.textContent = '⏳ Analyzing…';
 
-  setStatus('live');setProgress(5,'Initializing GeckoTerminal requests…');
+  document.getElementById('progressBar').style.display   = 'block';
+  document.getElementById('progressLog').style.display   = 'block';
+  document.getElementById('errorMsg').style.display      = 'none';
+  document.getElementById('resultsSection').style.display = 'none';
+  document.getElementById('exportBtn').style.display     = 'none';
+  document.getElementById('exportPanel').style.display   = 'none';
 
-  const results=[],errors=[];
-  for(let i=0;i<all.length;i++){
-    const pair=all[i],pct=10+Math.round((i/all.length)*80);
-    setProgress(pct,`Fetching ${pair.symbol} OHLCV…`);
-    try{
-      if(i>0)await new Promise(r=>setTimeout(r,1300)); // ~30 req/min safe margin
-      const candles=await fetchOHLCV(pair.poolAddress);
-      setProgress(pct+4,`Computing indicators for ${pair.symbol}…`);
-      results.push(analyze(candles,pair));
-    }catch(err){errors.push(`${pair.symbol}: ${err.message}`);}
+  setStatus('live'); setProgress(5, 'Initializing GeckoTerminal requests…');
+
+  const results=[], errors=[];
+  for (let i=0; i<all.length; i++) {
+    const pair=all[i], pct=10+Math.round((i/all.length)*80);
+    setProgress(pct, `Fetching ${pair.symbol} OHLCV…`);
+    try {
+      if (i>0) await new Promise(r=>setTimeout(r,1300));
+      const candles = await fetchOHLCV(pair.poolAddress);
+      setProgress(pct+4, `Computing signals for ${pair.symbol}…`);
+      results.push(analyze(candles, pair));
+    } catch(err) { errors.push(`${pair.symbol}: ${err.message}`); }
   }
 
-  setProgress(95,'Rendering…');
-  await new Promise(r=>setTimeout(r,100));
+  setProgress(95, 'Rendering…');
+  await new Promise(r=>setTimeout(r,80));
 
-  if(errors.length){
+  if (errors.length) {
     const em=document.getElementById('errorMsg');
     em.style.display='block';
     em.innerHTML='<strong>Errors:</strong><br>'+errors.map(e=>`&nbsp;▸ ${e}`).join('<br>');
   }
-  if(results.length>0){
-    lastResults=results;
-    document.getElementById('summaryBar').innerHTML=renderSummary(results);
-    document.getElementById('resultsBody').innerHTML=results.map(renderRow).join('');
-    document.getElementById('resultsSection').style.display='block';
-    document.getElementById('exportBtn').style.display='inline-flex';
-    document.getElementById('lastUpdated').textContent=new Date().toLocaleTimeString();
+
+  if (results.length > 0) {
+    lastResults = results;
+    document.getElementById('summaryBar').innerHTML    = renderSummary(results);
+    document.getElementById('cardsGrid').innerHTML     = results.map(renderCard).join('');
+    document.getElementById('tableBody').innerHTML     = results.map(renderTableRow).join('');
+    document.getElementById('resultsSection').style.display = 'block';
+    document.getElementById('exportBtn').style.display      = 'inline-flex';
+    const lu = document.getElementById('lastUpdated');
+    lu.textContent = new Date().toLocaleTimeString(); lu.style.display = 'block';
   }
-  setProgress(100,`Done — ${results.length} pair${results.length!==1?'s':''} analyzed${errors.length?`, ${errors.length} failed`:''}.`);
+
+  setProgress(100, `Done — ${results.length} pair${results.length!==1?'s':''} analyzed${errors.length?`, ${errors.length} failed`:''}.`);
   setStatus(results.length>0?'done':'idle');
-  btn.disabled=false;btn.textContent='↺ Refresh';
+  btn.disabled=false; btn.textContent='↺ Refresh';
 }
 
 init();
