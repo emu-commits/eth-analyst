@@ -361,12 +361,30 @@ function init() {
 }
 
 // ── FETCH ─────────────────────────────────────────────────────────────────────
-async function gtFetch(path) {
+// Retries once after 6s on network failure or 429 — handles transient rate limit drops
+async function gtFetch(path, attempt) {
+  attempt = attempt || 1;
   let res;
-  if (WORKER_URL) {
-    res = await fetch(WORKER_URL + '?path=' + encodeURIComponent(path));
-  } else {
-    res = await fetch(GT_DIRECT + path, { headers: GT_HDR });
+  try {
+    if (WORKER_URL) {
+      res = await fetch(WORKER_URL + '?path=' + encodeURIComponent(path));
+    } else {
+      res = await fetch(GT_DIRECT + path, { headers: GT_HDR });
+    }
+  } catch (networkErr) {
+    // "Load failed" / network error — likely rate limited or connection dropped
+    if (attempt < 2) {
+      await new Promise(r => setTimeout(r, 6000));
+      return gtFetch(path, 2);
+    }
+    throw new Error('Network error after retry — possible rate limit. Wait 60s and try again.');
+  }
+  if (res.status === 429) {
+    if (attempt < 2) {
+      await new Promise(r => setTimeout(r, 8000));
+      return gtFetch(path, 2);
+    }
+    throw new Error('Rate limited (429). Wait ~60s before running again.');
   }
   if (!res.ok) {
     const t = await res.text().catch(() => '');
@@ -915,7 +933,7 @@ async function runAnalysis() {
   // Delay between every GT request: 2.2s gives ~27 req/min max headroom
   // With resolvePool (1 req) + fetchOHLCV (1 req) per pair = 2 requests per pair
   // 8 pairs × 2 req × 2.2s spacing = ~35s total — safe under 30 req/min
-  const DELAY_MS = 2200;
+  const DELAY_MS = 3000; // 3s between each GT request → 16 req over ~48s for 8 pairs (safe under 30/min)
   const delay = () => new Promise(r => setTimeout(r, DELAY_MS));
 
   const results=[], errors=[];
