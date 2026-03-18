@@ -24,7 +24,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from trader import config
-from trader.gt_client import resolve_pool, fetch_ohlcv, fetch_current_price
+from trader.gt_client import resolve_pool, fetch_ohlcv, fetch_current_price, _load_pool_cache_stale
 from trader.signals import generate_signal
 from trader.executor import Executor
 
@@ -154,14 +154,40 @@ def main():
     for pair in config.PAIRS:
         sym = pair['symbol']
         try:
-            pool_info = resolve_pool(pair)
+            # ── Step 1: resolve pool (with stale-cache fallback) ──────────────
+            pool_info = None
+            try:
+                pool_info = resolve_pool(pair)
+            except Exception as resolve_err:
+                # Resolve failed (rate limited, network error, etc.)
+                # Try falling back to a stale cached entry so we can still
+                # fetch OHLCV for open position monitoring.
+                stale = _load_pool_cache_stale(pair['token_address'].lower())
+                if stale:
+                    logger.warning(
+                        f'  {sym}: resolve failed ({resolve_err}), '
+                        f'using stale cache from {stale.get("cached_at","?")[:10]}'
+                    )
+                    pool_info = {
+                        'pool_address':  stale['pool_address'],
+                        'dex':           stale.get('dex', 'Unknown'),
+                        'currency':      stale.get('currency', 'token'),
+                        'liquidity_usd': stale.get('liquidity_usd', 0),
+                        'from_cache':    True,
+                        'stale':         True,
+                    }
+                else:
+                    raise  # no cache at all — propagate original error
+
             pool_addr = pool_info['pool_address']
             dex       = pool_info['dex']
             currency  = pool_info['currency']
             liq       = pool_info['liquidity_usd']
-            src       = 'cache' if pool_info.get('from_cache') else 'live'
+            stale_tag = ' STALE' if pool_info.get('stale') else ''
+            src       = ('cache' if pool_info.get('from_cache') else 'live') + stale_tag
             logger.info(f'  {sym}: {dex} pool={pool_addr[:10]}… liq=${liq:,.0f} [{src}]')
 
+            # ── Step 2: fetch OHLCV ───────────────────────────────────────────
             logger.info(f'  {sym}: fetching OHLCV…')
             try:
                 candles = fetch_ohlcv(pool_addr, currency)

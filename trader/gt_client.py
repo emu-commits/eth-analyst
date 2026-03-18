@@ -38,6 +38,16 @@ def _cache_is_fresh(entry: dict) -> bool:
     except (KeyError, ValueError):
         return False
 
+def _load_pool_cache_stale(token_addr: str) -> dict | None:
+    """
+    Return a cached pool entry even if stale.
+    Used as fallback when resolve_pool() fails (e.g. rate limited) so open
+    positions can still be monitored via OHLCV fetch.
+    Returns None if no cache entry exists at all.
+    """
+    cache = _load_pool_cache()
+    return cache.get(token_addr.lower())
+
 # ── SESSION ───────────────────────────────────────────────────────────────────
 _session = requests.Session()
 _session.headers.update(config.GT_HEADERS)
