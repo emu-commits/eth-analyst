@@ -154,16 +154,25 @@ def main():
     for pair in config.PAIRS:
         sym = pair['symbol']
         try:
-            logger.info(f'  {sym}: resolving pool…')
             pool_info = resolve_pool(pair)
             pool_addr = pool_info['pool_address']
             dex       = pool_info['dex']
             currency  = pool_info['currency']
             liq       = pool_info['liquidity_usd']
-            logger.info(f'  {sym}: {dex} pool={pool_addr[:10]}… liq=${liq:,.0f}')
+            src       = 'cache' if pool_info.get('from_cache') else 'live'
+            logger.info(f'  {sym}: {dex} pool={pool_addr[:10]}… liq=${liq:,.0f} [{src}]')
 
             logger.info(f'  {sym}: fetching OHLCV…')
-            candles = fetch_ohlcv(pool_addr, currency)
+            try:
+                candles = fetch_ohlcv(pool_addr, currency)
+            except ValueError:
+                # OHLCV failed — pool may have migrated. Force re-resolve and retry once.
+                logger.warning(f'  {sym}: OHLCV failed, forcing pool re-resolve…')
+                pool_info = resolve_pool(pair, force_refresh=True)
+                pool_addr = pool_info['pool_address']
+                dex       = pool_info['dex']
+                currency  = pool_info['currency']
+                candles   = fetch_ohlcv(pool_addr, currency)
 
             signal  = generate_signal(candles, pair, pool_addr, dex)
             signal['generated_at'] = run_time
@@ -191,6 +200,8 @@ def main():
     }
     save_json(config.SIGNALS_FILE, signals_output)
     logger.info(f'Wrote {config.SIGNALS_FILE} ({len(all_signals)} signals)')
+
+    # pool_cache.json is written by gt_client.py automatically during resolve
 
     # ── PHASE 2: Check exit/stop for open positions ────────────────────────────
     logger.info(f'Checking {len(open_positions)} open position(s)…')

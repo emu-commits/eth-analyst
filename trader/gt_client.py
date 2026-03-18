@@ -2,10 +2,41 @@
 # GeckoTerminal API client.
 # Handles pool resolution (token address → best live pool) and OHLCV fetching.
 # This is the Python equivalent of resolvePool() + fetchOHLCV() in the HTML tool.
+#
+# Pool resolution results are cached in pool_cache.json for 24 hours.
+# This cuts GeckoTerminal requests from 16/run to 8/run after the first run,
+# staying well within the free tier rate limit.
 
+import sys
 import time
+import json
 import requests
+from datetime import datetime, timezone, timedelta
+from pathlib import Path
 from . import config
+
+# ── POOL CACHE ────────────────────────────────────────────────────────────────
+# Stores resolved pool addresses so we don't re-query GeckoTerminal every hour.
+# Format: { token_address: { pool_address, dex, currency, liquidity_usd, cached_at } }
+
+POOL_CACHE_FILE = 'pool_cache.json'
+POOL_CACHE_TTL  = timedelta(hours=24)  # re-resolve once per day
+
+def _load_pool_cache() -> dict:
+    try:
+        return json.loads(Path(POOL_CACHE_FILE).read_text())
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+def _save_pool_cache(cache: dict):
+    Path(POOL_CACHE_FILE).write_text(json.dumps(cache, indent=2))
+
+def _cache_is_fresh(entry: dict) -> bool:
+    try:
+        cached_at = datetime.fromisoformat(entry['cached_at'])
+        return datetime.now(timezone.utc) - cached_at < POOL_CACHE_TTL
+    except (KeyError, ValueError):
+        return False
 
 # ── SESSION ───────────────────────────────────────────────────────────────────
 _session = requests.Session()
@@ -27,7 +58,6 @@ def _gt_get(path: str) -> dict:
     if resp.status_code == 429:
         # Back off and retry once — use stderr so it doesn't pollute
         # the run_output.txt summary captured for email
-        import sys
         print(f"  [GT] Rate limited on {path[:60]} — waiting 30s", file=sys.stderr)
         time.sleep(30)
         resp = _session.get(url, timeout=15)
@@ -39,10 +69,13 @@ def _gt_get(path: str) -> dict:
     return resp.json()
 
 
-def resolve_pool(pair: dict) -> dict:
+def resolve_pool(pair: dict, force_refresh: bool = False) -> dict:
     """
     Given a pair config (with token_address), find the highest-liquidity
     live pool on Ethereum mainnet paired against WETH (or USDC for ETH/USDC).
+
+    Results are cached in pool_cache.json for 24 hours to minimise API calls.
+    Pass force_refresh=True to bypass the cache (e.g. after a failed OHLCV fetch).
 
     Returns:
         {
@@ -53,6 +86,19 @@ def resolve_pool(pair: dict) -> dict:
         }
     """
     token_addr = pair['token_address'].lower()
+
+    # ── Check cache first ─────────────────────────────────────────────────────
+    if not force_refresh:
+        cache = _load_pool_cache()
+        entry = cache.get(token_addr)
+        if entry and _cache_is_fresh(entry):
+            return {
+                'pool_address':  entry['pool_address'],
+                'dex':           entry['dex'],
+                'currency':      entry['currency'],
+                'liquidity_usd': entry.get('liquidity_usd', 0),
+                'from_cache':    True,
+            }
     data  = _gt_get(f'/networks/eth/tokens/{token_addr}/pools?page=1')
     pools = data.get('data', [])
 
@@ -97,12 +143,26 @@ def resolve_pool(pair: dict) -> dict:
     # currency: 'usd' for WETH/USDC pools, 'token' for TOKEN/WETH pools
     currency = 'usd' if pair.get('quote_is_usd') else 'token'
 
-    return {
-        'pool_address': pool_address,
-        'dex':          dex,
-        'currency':     currency,
+    result = {
+        'pool_address':  pool_address,
+        'dex':           dex,
+        'currency':      currency,
         'liquidity_usd': liq_usd,
+        'from_cache':    False,
     }
+
+    # ── Write to cache ────────────────────────────────────────────────────────
+    cache = _load_pool_cache()
+    cache[token_addr] = {
+        'pool_address':  pool_address,
+        'dex':           dex,
+        'currency':      currency,
+        'liquidity_usd': liq_usd,
+        'cached_at':     datetime.now(timezone.utc).isoformat(),
+    }
+    _save_pool_cache(cache)
+
+    return result
 
 
 def fetch_ohlcv(pool_address: str, currency: str = 'token') -> list[dict]:
