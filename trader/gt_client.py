@@ -25,11 +25,15 @@ def _gt_get(path: str) -> dict:
     _last_request_time = time.time()
 
     if resp.status_code == 429:
-        # Back off and retry once
-        print(f"  [GT] Rate limited on {path[:60]} — waiting 30s")
+        # Back off and retry once — use stderr so it doesn't pollute
+        # the run_output.txt summary captured for email
+        import sys
+        print(f"  [GT] Rate limited on {path[:60]} — waiting 30s", file=sys.stderr)
         time.sleep(30)
         resp = _session.get(url, timeout=15)
         _last_request_time = time.time()
+        if resp.status_code == 429:
+            raise RuntimeError(f"Rate limited twice on {path[:60]} — aborting pair")
 
     resp.raise_for_status()
     return resp.json()

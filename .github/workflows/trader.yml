@@ -92,9 +92,15 @@ jobs:
           git push
 
       # ── 6. Email notification when a trade fires ─────────────────────────────
-      # Uses GitHub's built-in email for workflow failure notifications,
-      # plus a manual step that creates a dummy "failure" to trigger email
-      # when trades happen. The email body is the run output summary.
+      - name: Prepare email body
+        if: steps.check_trades.outputs.traded == 'true'
+        run: |
+          # Prepend a header with the run URL to the output file
+          HEADER="ETH Trader — trade executed\nRun: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\n\n"
+          echo -e "$HEADER$(cat run_output.txt)" > email_body.txt
+          # Swap the file used for email
+          mv email_body.txt run_output.txt
+
       - name: Notify on trade
         if: steps.check_trades.outputs.traded == 'true'
         uses: dawidd6/action-send-mail@v3
@@ -107,15 +113,7 @@ jobs:
           to:             ${{ secrets.NOTIFY_EMAIL_TO }}
           from:           ETH Trader <${{ secrets.NOTIFY_EMAIL_FROM }}>
           subject:        '[ETH Trader] Trade executed — ${{ github.run_number }}'
-          body: |
-            A trade was executed by your ETH Trader bot.
-
-            Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-
-            --- OUTPUT ---
-            ${{ steps.trader.outputs.run_output }}
-
-            Check signals.json and positions.json in the repo for full details.
+          body_path: run_output.txt
 
       # ── 7. Always upload run output as artifact (30 day retention) ────────────
       - name: Upload run log
