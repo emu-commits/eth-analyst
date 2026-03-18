@@ -11,18 +11,6 @@
     "opened_at": "2026-03-18T02:16:22.916428+00:00",
     "tx_hash": "PAPER"
   },
-  "AMP/ETH": {
-    "symbol": "AMP/ETH",
-    "token_address": "0xfF20817765cB7f73d4bde2e66e067E58d11095C2",
-    "pool_address": "0x15e86e6f65ef7ea1dbb72a5e51a07926fb1c82e3",
-    "pool_fee": 3000,
-    "entry_price": 6e-07,
-    "exit_target": 6.1e-07,
-    "stop_loss": 5.8e-07,
-    "weth_in_wei": 100000000000000000,
-    "opened_at": "2026-03-18T02:16:22.916428+00:00",
-    "tx_hash": "PAPER"
-  },
   "ARB/ETH": {
     "symbol": "ARB/ETH",
     "token_address": "0xB50721BCf8d664c30412Cfbc6cf7a15145234ad1",
