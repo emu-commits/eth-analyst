@@ -22,5 +22,17 @@
     "weth_in_wei": 100000000000000000,
     "opened_at": "2026-03-18T20:59:51.024743+00:00",
     "tx_hash": "PAPER"
+  },
+  "LINK/ETH": {
+    "symbol": "LINK/ETH",
+    "token_address": "0x514910771AF9Ca656af840dff83E8264EcF986CA",
+    "pool_address": "0xa6cc3c2531fdaa6ae1a3ca84c2855806728693e8",
+    "pool_fee": 3000,
+    "entry_price": "0.004184",
+    "exit_target": "0.004247",
+    "stop_loss": "0.004153",
+    "weth_in_wei": 100000000000000000,
+    "opened_at": "2026-03-18T23:55:32.193672+00:00",
+    "tx_hash": "PAPER"
   }
 }
