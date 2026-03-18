@@ -9,6 +9,31 @@ import math
 from . import config
 
 
+# ── PRICE FORMATTING ──────────────────────────────────────────────────────────
+
+def fmt_price(p: float) -> str:
+    """
+    Format a price as a fixed-point decimal string, always showing at least
+    3 significant figures with no scientific notation.
+
+    Stored as a string in signals/logs to avoid Python's float repr silently
+    switching to scientific notation for small values like AMP/ETH.
+
+    Examples:
+      2333.64409  → '2333.644090'
+      0.004216    → '0.004216'
+      6e-07       → '0.000000600'
+      6.1e-07     → '0.000000610'
+      4.645e-05   → '0.0000464500'
+    """
+    if p == 0:
+        return '0.000000'
+    import math as _math
+    magnitude = _math.floor(_math.log10(abs(p)))
+    dp = min(max(6, -magnitude + 2), 12)
+    return f'{p:.{dp}f}'
+
+
 # ── INDICATORS ────────────────────────────────────────────────────────────────
 
 def calc_rsi(closes: list[float], period: int = None) -> float | None:
@@ -195,11 +220,11 @@ def generate_signal(candles: list[dict], pair: dict,
         'token_address': pair['token_address'],
         'dex':           dex,
         'quote_is_usd':  pair.get('quote_is_usd', False),
-        'current_price': round(current, 8),
+        'current_price': fmt_price(current),
         'change_7d_pct': round(change_7d, 3),
-        'entry':         round(entry, 8),
-        'exit':          round(exit_, 8),
-        'stop_loss':     round(stop, 8),
+        'entry':         fmt_price(entry),
+        'exit':          fmt_price(exit_),
+        'stop_loss':     fmt_price(stop),
         'rr_ratio':      round(rr, 3),
         'verdict':       verdict,
         'confidence':    confidence,
@@ -210,5 +235,5 @@ def generate_signal(candles: list[dict], pair: dict,
         'boll_signal':   boll_sig,
         'vwap_signal':   vwap_sig,
         'signals':       signals,
-        'atr':           round(atr, 8),
+        'atr':           fmt_price(atr),
     }

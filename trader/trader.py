@@ -25,7 +25,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from trader import config
 from trader.gt_client import resolve_pool, fetch_ohlcv, fetch_current_price, _load_pool_cache_stale
-from trader.signals import generate_signal
+from trader.signals import generate_signal, fmt_price
 from trader.executor import Executor
 
 # ── LOGGING ───────────────────────────────────────────────────────────────────
@@ -97,11 +97,11 @@ def should_enter(signal: dict, open_positions: dict) -> tuple[bool, str]:
     if signal['rr_ratio'] < config.MIN_RR:
         return False, f"R:R {signal['rr_ratio']:.2f} < {config.MIN_RR}"
 
-    price = signal['current_price']
-    entry = signal['entry']
+    price = float(signal['current_price'])
+    entry = float(signal['entry'])
     # Price must be at or below entry + tolerance (we don't chase)
     if price > entry * (1 + config.ENTRY_TOLERANCE):
-        return False, f"price {price:.6f} too far above entry {entry:.6f}"
+        return False, f"price {fmt_price(price)} too far above entry {fmt_price(entry)}"
 
     if sym in open_positions:
         return False, 'already have open position'
@@ -121,18 +121,18 @@ def check_exit_or_stop(position: dict, current_price: float) -> tuple[str | None
     Checks current price against the exit target and stop loss stored
     when the position was opened.
     """
-    exit_target = position['exit_target']
-    stop_loss   = position['stop_loss']
+    exit_target = float(position['exit_target'])
+    stop_loss   = float(position['stop_loss'])
 
     if current_price >= exit_target:
         pct = (current_price - position['entry_price']) / position['entry_price'] * 100
-        return 'exit', f'price {current_price:.6f} >= exit {exit_target:.6f} (+{pct:.1f}%)'
+        return 'exit', f'price {fmt_price(current_price)} >= exit {fmt_price(exit_target)} (+{pct:.1f}%)'
 
     if current_price <= stop_loss:
         pct = (current_price - position['entry_price']) / position['entry_price'] * 100
-        return 'stop', f'price {current_price:.6f} <= stop {stop_loss:.6f} ({pct:.1f}%)'
+        return 'stop', f'price {fmt_price(current_price)} <= stop {fmt_price(stop_loss)} ({pct:.1f}%)'
 
-    return None, f'price {current_price:.6f} in range [{stop_loss:.6f}, {exit_target:.6f}]'
+    return None, f'price {fmt_price(current_price)} in range [{fmt_price(stop_loss)}, {fmt_price(exit_target)}]'
 
 
 # ── MAIN ──────────────────────────────────────────────────────────────────────
@@ -208,8 +208,8 @@ def main():
                 f'  {sym}: {signal["verdict"]} '
                 f'conf={signal["confidence"]}% '
                 f'R:R={signal["rr_ratio"]:.2f} '
-                f'price={signal["current_price"]:.6f} '
-                f'entry={signal["entry"]:.6f}'
+                f'price={signal["current_price"]} '
+                f'entry={signal["entry"]}'
             )
 
         except Exception as e:
@@ -233,7 +233,7 @@ def main():
     logger.info(f'Checking {len(open_positions)} open position(s)…')
 
     # Build a quick price lookup from freshly generated signals
-    price_map = {s['symbol']: s['current_price'] for s in all_signals}
+    price_map = {s['symbol']: float(s['current_price']) for s in all_signals}
 
     positions_to_close = []
     for sym, position in open_positions.items():
@@ -259,15 +259,17 @@ def main():
                 reason           = action,
             )
             del open_positions[sym]
+            close_px = price_map.get(sym, 0)
+            entry_f  = float(position['entry_price'])
+            pnl      = round((close_px - entry_f) / entry_f * 100, 2) if entry_f else 0
             entry = {
                 'timestamp':     run_time,
                 'action':        action,
                 'symbol':        sym,
                 'reason':        reason,
-                'entry_price':   position['entry_price'],
-                'close_price':   price_map.get(sym),
-                'pnl_pct':       round((price_map.get(sym, 0) - position['entry_price'])
-                                       / position['entry_price'] * 100, 2),
+                'entry_price':   str(position['entry_price']),
+                'close_price':   fmt_price(close_px) if close_px else None,
+                'pnl_pct':       pnl,
                 'tx_hash':       result['tx_hash'],
                 'mode':          mode_str,
             }
@@ -304,9 +306,9 @@ def main():
                 'token_address': signal['token_address'],
                 'pool_address':  signal['pool_address'],
                 'pool_fee':      fee_from_dex_name(signal['dex']),
-                'entry_price':   signal['current_price'],
-                'exit_target':   signal['exit'],
-                'stop_loss':     signal['stop_loss'],
+                'entry_price':   signal['current_price'],  # fmt_price string
+                'exit_target':   signal['exit'],           # fmt_price string
+                'stop_loss':     signal['stop_loss'],      # fmt_price string
                 'weth_in_wei':   weth_amount_wei,
                 'opened_at':     run_time,
                 'tx_hash':       result['tx_hash'],
@@ -354,7 +356,7 @@ def main():
         print('\nActions:')
         for a in actions_taken:
             print(f'  {a["action"].upper():6} {a["symbol"]:10} '
-                  f'@ {a.get("entry_price", a.get("close_price", "?")):.6f}'
+                  f'@ {a.get("entry_price", a.get("close_price", "?"))}'
                   f'  tx={a["tx_hash"]}')
 
     print('\nSignals:')
@@ -363,7 +365,7 @@ def main():
         print(f'  {marker} {s["symbol"]:10} {s["verdict"]:4} '
               f'conf={s["confidence"]:3d}% '
               f'R:R={s["rr_ratio"]:.2f} '
-              f'price={s["current_price"]:.6f}')
+              f'price={s["current_price"]}')
 
     print('═' * 60 + '\n')
 
