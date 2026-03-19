@@ -34,5 +34,17 @@
     "weth_in_wei": 100000000000000000,
     "opened_at": "2026-03-18T23:55:32.193672+00:00",
     "tx_hash": "PAPER"
+  },
+  "ETH/USDC": {
+    "symbol": "ETH/USDC",
+    "token_address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+    "pool_address": "0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640",
+    "pool_fee": 3000,
+    "entry_price": "2124.724484",
+    "exit_target": "2211.701438",
+    "stop_loss": "2123.187334",
+    "weth_in_wei": 100000000000000000,
+    "opened_at": "2026-03-19T18:00:30.091324+00:00",
+    "tx_hash": "PAPER"
   }
 }
