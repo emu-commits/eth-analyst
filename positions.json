@@ -46,5 +46,17 @@
     "weth_in_wei": 100000000000000000,
     "opened_at": "2026-03-19T18:00:30.091324+00:00",
     "tx_hash": "PAPER"
+  },
+  "AAVE/ETH": {
+    "symbol": "AAVE/ETH",
+    "token_address": "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9",
+    "pool_address": "0x5ab53ee1d50eef2c1dd3d5402789cd27bb52c1bb",
+    "pool_fee": 3000,
+    "entry_price": "0.052198",
+    "exit_target": "0.052951",
+    "stop_loss": "0.051925",
+    "weth_in_wei": 100000000000000000,
+    "opened_at": "2026-03-19T23:01:09.540878+00:00",
+    "tx_hash": "PAPER"
   }
 }
