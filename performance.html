@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ETH Trader — Performance</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#080c10;--surface:#0d1117;--surface2:#111820;--border:#1c2530;--border-hi:#2e3f50;
+  --text:#c9d8e8;--dim:#5a7080;--bright:#e8f4ff;
+  --green:#00e5a0;--green-d:#00a870;--green-bg:rgba(0,229,160,.07);
+  --red:#ff4d6a;--red-d:#c0304a;--red-bg:rgba(255,77,106,.07);
+  --yellow:#f5c842;--yellow-bg:rgba(245,200,66,.07);
+  --accent:#3d9cff;--accent-bg:rgba(61,156,255,.08);
+  --mono:'Space Mono',monospace;--display:'Syne',sans-serif;--r:4px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--text);font-family:var(--mono);font-size:12px;min-height:100vh}
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.025) 2px,rgba(0,0,0,.025) 4px);pointer-events:none;z-index:9999}
+
+/* HEADER */
+header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;z-index:100;gap:12px}
+.logo{font-family:var(--display);font-weight:800;font-size:17px;color:var(--bright);letter-spacing:-.5px;white-space:nowrap}
+.logo span{color:var(--accent)}
+.hdr-right{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.status{font-size:10px;color:var(--dim);letter-spacing:.05em;white-space:nowrap}
+.refresh-btn{padding:6px 12px;background:transparent;border:1px solid var(--border-hi);color:var(--text);font-family:var(--mono);font-size:10px;cursor:pointer;border-radius:var(--r)}
+.refresh-btn:hover{border-color:var(--accent);color:var(--accent)}
+
+/* LAYOUT */
+.main{padding:16px;max-width:900px;margin:0 auto}
+
+/* CONFIG */
+.config-bar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.repo-input{flex:1;min-width:180px;padding:9px 12px;background:var(--surface2);border:1px solid var(--border);color:var(--bright);font-family:var(--mono);font-size:11px;border-radius:var(--r);outline:none;transition:border-color .15s}
+.repo-input::placeholder{color:var(--dim)}
+.repo-input:focus{border-color:var(--accent)}
+.load-btn{padding:9px 16px;background:var(--accent);color:var(--bg);border:none;font-family:var(--display);font-weight:700;font-size:12px;cursor:pointer;border-radius:var(--r);white-space:nowrap}
+.load-btn:hover{background:#6ab5ff}
+.load-btn:disabled{background:var(--border);color:var(--dim);cursor:not-allowed}
+
+/* ERROR */
+.err{padding:12px 14px;background:var(--red-bg);border:1px solid var(--red-d);border-radius:var(--r);color:var(--red);font-size:11px;margin-bottom:14px;display:none;line-height:1.6}
+
+/* SUMMARY */
+.summary-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 12px;display:flex;flex-direction:column;gap:3px}
+.stat-v{font-family:var(--display);font-weight:700;font-size:20px;color:var(--bright)}
+.stat-v.p{color:var(--green)}.stat-v.n{color:var(--red)}.stat-v.u{color:var(--yellow)}
+.stat-l{font-size:9px;color:var(--dim);letter-spacing:.08em;text-transform:uppercase}
+
+/* CHART */
+.chart-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:20px}
+.chart-wrap svg{display:block;width:100%;overflow:visible}
+
+/* SECTION HEADER */
+.sh{font-family:var(--display);font-weight:600;font-size:13px;color:var(--bright);margin-bottom:10px}
+
+/* POSITIONS */
+.pos-list{display:flex;flex-direction:column;gap:8px;margin-bottom:20px}
+.pos-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.pos-hdr{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--border)}
+.pos-sym{font-family:var(--display);font-weight:700;font-size:14px;color:var(--bright)}
+.pos-when{font-size:10px;color:var(--dim);margin-top:1px}
+.open-badge{font-size:9px;padding:2px 7px;border-radius:2px;background:var(--accent-bg);color:var(--accent);border:1px solid rgba(61,156,255,.25);letter-spacing:.04em}
+.pos-zones{display:grid;grid-template-columns:1fr 1fr 1fr}
+.pz{display:flex;flex-direction:column;gap:2px;padding:9px 12px;border-right:1px solid var(--border)}
+.pz:last-child{border-right:none}
+.pz-l{font-size:9px;color:var(--dim);letter-spacing:.07em;text-transform:uppercase}
+.pz-v{font-size:11px;font-weight:700}
+.pz-v.e{color:var(--green)}.pz-v.x{color:var(--yellow)}.pz-v.s{color:var(--red)}
+.no-pos{padding:16px;text-align:center;color:var(--dim);font-size:11px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r)}
+
+/* TRADES */
+.trades-list{display:flex;flex-direction:column;gap:6px;margin-bottom:20px}
+.tc{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.tc.buy {border-left:3px solid var(--accent)}
+.tc.exit{border-left:3px solid var(--green)}
+.tc.stop{border-left:3px solid var(--red)}
+.tc-hdr{display:flex;align-items:center;justify-content:space-between;padding:10px 12px 4px}
+.tc-sym{font-family:var(--display);font-weight:700;font-size:14px;color:var(--bright)}
+.tc-badge{font-size:10px;padding:2px 7px;border-radius:2px;font-family:var(--mono);letter-spacing:.04em}
+.tc-badge.buy {background:var(--accent-bg);color:var(--accent);border:1px solid rgba(61,156,255,.25)}
+.tc-badge.exit{background:var(--green-bg);color:var(--green);border:1px solid var(--green-d)}
+.tc-badge.stop{background:var(--red-bg);color:var(--red);border:1px solid var(--red-d)}
+.tc-time{font-size:10px;color:var(--dim);padding:0 12px 6px}
+.tc-body{display:grid;grid-template-columns:1fr 1fr;padding:4px 12px 10px;gap:4px 16px;font-size:11px}
+.tf{display:flex;justify-content:space-between;gap:8px;min-width:0}
+.tf-l{color:var(--dim);white-space:nowrap}
+.tf-v{font-weight:700;color:var(--bright);text-align:right;overflow:hidden;text-overflow:ellipsis}
+.tf-v.p{color:var(--green)}.tf-v.n{color:var(--red)}
+.tc-sigs{padding:0 12px 10px;font-size:10px;color:var(--dim);font-style:italic}
+
+/* LOADING */
+.loading{display:none;text-align:center;padding:40px 16px;color:var(--dim);font-size:12px}
+.dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accent);margin:0 3px;animation:bl 1.2s ease-in-out infinite}
+.dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
+@keyframes bl{0%,100%{opacity:.2}50%{opacity:1}}
+
+.footnote{font-size:10px;color:var(--dim);line-height:1.6;padding-top:14px;border-top:1px solid var(--border);margin-top:8px}
+
+@media(min-width:480px){
+  .main{padding:20px 24px}header{padding:16px 24px}
+  .summary-grid{grid-template-columns:repeat(6,1fr)}
+}
+@media(min-width:768px){
+  .main{padding:24px 32px}header{padding:18px 32px}.logo{font-size:20px}
+  .tc-body{grid-template-columns:repeat(3,1fr)}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">ETH<span>·</span>PERF</div>
+  <div class="hdr-right">
+    <div class="status" id="status">—</div>
+    <button class="refresh-btn" onclick="load()">↺ Refresh</button>
+  </div>
+</header>
+
+<div class="main">
+  <div class="config-bar">
+    <input class="repo-input" id="repo" placeholder="emu-commits/eth-analyst" value="emu-commits/eth-analyst"/>
+    <button class="load-btn" id="loadBtn" onclick="load()">Load</button>
+  </div>
+  <div class="err" id="err"></div>
+  <div class="loading" id="loading">
+    <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+    <span style="margin-left:8px">Loading trade data…</span>
+  </div>
+
+  <div id="content" style="display:none">
+    <div class="summary-grid" id="sg"></div>
+
+    <div class="sh">Cumulative P&amp;L</div>
+    <div class="chart-wrap" id="cw"><svg id="chart" height="120"></svg></div>
+
+    <div class="sh" id="posTitle">Open Positions</div>
+    <div class="pos-list" id="pl"></div>
+
+    <div class="sh">Trade History</div>
+    <div class="trades-list" id="tl"></div>
+  </div>
+
+  <div class="footnote">
+    Reads <strong style="color:var(--text)">trades.log</strong> and <strong style="color:var(--text)">positions.json</strong>
+    from your GitHub repo. P&L is per-trade percentage. Prices in ETH (Ξ) unless ETH/USDC.
+  </div>
+</div>
+
+<script>
+const RAW = 'https://raw.githubusercontent.com';
+const g = id => document.getElementById(id);
+const repo = () => g('repo').value.trim() || 'emu-commits/eth-analyst';
+
+function setStatus(m){ g('status').textContent = m; }
+function showErr(m){ g('err').style.display='block'; g('err').textContent=m; }
+function clearErr(){ g('err').style.display='none'; }
+
+async function rawFetch(path){
+  const r = await fetch(`${RAW}/${repo()}/main/${path}?t=${Date.now()}`);
+  if (!r.ok) throw new Error(`${path} → HTTP ${r.status}`);
+  return r.text();
+}
+async function jsonFetch(path){ return JSON.parse(await rawFetch(path)); }
+function parseJSONL(txt){
+  return txt.trim().split('\n').filter(l=>l.trim())
+    .map(l=>{try{return JSON.parse(l);}catch{return null;}}).filter(Boolean);
+}
+function fmtDate(iso){
+  if(!iso)return'—';
+  const d=new Date(iso);
+  return d.toLocaleDateString('en-US',{month:'short',day:'numeric'})
+       +' '+d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:false});
+}
+function fmtPnl(pct){
+  if(pct==null)return{t:'—',c:'u'};
+  return{t:`${pct>=0?'+':''}${pct.toFixed(2)}%`,c:pct>=0?'p':'n'};
+}
+
+// Equity curve
+function drawChart(closed){
+  const svg=g('chart'), W=g('cw').clientWidth-28, H=120;
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  if(!closed.length){
+    svg.innerHTML=`<text x="${W/2}" y="${H/2}" text-anchor="middle" fill="#5a7080" font-size="11" font-family="Space Mono">No closed trades yet</text>`;
+    return;
+  }
+  let cum=0;
+  const pts=[{i:0,y:0}];
+  closed.forEach((t,i)=>{cum+=(t.pnl_pct||0);pts.push({i:i+1,y:cum});});
+  const minY=Math.min(...pts.map(p=>p.y)), maxY=Math.max(...pts.map(p=>p.y)), rng=maxY-minY||1;
+  const pad=18;
+  const tx=i=>pad+(i/(pts.length-1))*(W-pad*2);
+  const ty=y=>H-pad-((y-minY)/rng)*(H-pad*2);
+  const poly=pts.map(p=>`${tx(p.i)},${ty(p.y)}`).join(' ');
+  const zY=ty(0), col=cum>=0?'#00e5a0':'#ff4d6a';
+  const fill=`${tx(0)},${zY} ${poly} ${tx(pts.length-1)},${zY}`;
+  svg.innerHTML=`
+    <line x1="${pad}" y1="${zY}" x2="${W-pad}" y2="${zY}" stroke="#1c2530" stroke-width="1" stroke-dasharray="3,3"/>
+    <polygon points="${fill}" fill="${col}" opacity="0.08"/>
+    <polyline points="${poly}" fill="none" stroke="${col}" stroke-width="2" stroke-linejoin="round"/>
+    <text x="${pad}" y="${H-3}" fill="#5a7080" font-size="9" font-family="Space Mono">0</text>
+    <text x="${W-pad}" y="${H-3}" fill="#5a7080" font-size="9" font-family="Space Mono" text-anchor="end">${closed.length} trades</text>
+    <text x="${W-pad}" y="${pad-4}" fill="${col}" font-size="10" font-family="Space Mono" text-anchor="end" font-weight="bold">${cum>=0?'+':''}${cum.toFixed(1)}%</text>`;
+}
+
+// Summary bar
+function renderSummary(closed, openCnt, all){
+  const wins=closed.filter(t=>(t.pnl_pct||0)>0).length;
+  const wr=closed.length?(wins/closed.length*100).toFixed(0)+'%':'—';
+  const tot=closed.reduce((s,t)=>s+(t.pnl_pct||0),0);
+  const avg=closed.length?tot/closed.length:0;
+  const buys=all.filter(t=>t.action==='buy').length;
+  const pc=tot>=0?'p':'n', ac=avg>=0?'p':'n';
+  const wc=!closed.length?'u':parseFloat(wr)>=50?'p':'n';
+  g('sg').innerHTML=[
+    {v:buys,l:'Entries',c:''},
+    {v:closed.length,l:'Closed',c:''},
+    {v:openCnt,l:'Open',c:openCnt>0?'u':''},
+    {v:wr,l:'Win Rate',c:wc},
+    {v:`${tot>=0?'+':''}${tot.toFixed(1)}%`,l:'Total P&L',c:pc},
+    {v:`${avg>=0?'+':''}${avg.toFixed(1)}%`,l:'Avg P&L',c:ac},
+  ].map(s=>`<div class="stat"><div class="stat-v ${s.c}">${s.v}</div><div class="stat-l">${s.l}</div></div>`).join('');
+}
+
+// Positions
+function renderPos(pos){
+  const keys=Object.keys(pos);
+  g('posTitle').textContent=`Open Positions (${keys.length})`;
+  g('pl').innerHTML=!keys.length
+    ?'<div class="no-pos">No open positions</div>'
+    :keys.map(sym=>{
+      const p=pos[sym];
+      return `<div class="pos-card">
+        <div class="pos-hdr">
+          <div><div class="pos-sym">${sym}</div><div class="pos-when">Opened ${fmtDate(p.opened_at)}</div></div>
+          <span class="open-badge">OPEN</span>
+        </div>
+        <div class="pos-zones">
+          <div class="pz"><div class="pz-l">Entry</div><div class="pz-v e">${p.entry_price}</div></div>
+          <div class="pz"><div class="pz-l">Exit Target</div><div class="pz-v x">${p.exit_target}</div></div>
+          <div class="pz"><div class="pz-l">Stop Loss</div><div class="pz-v s">${p.stop_loss}</div></div>
+        </div>
+      </div>`;
+    }).join('');
+}
+
+// Trade history
+function renderTrades(trades){
+  g('tl').innerHTML=[...trades].reverse().map(t=>{
+    const a=t.action, pnl=fmtPnl(t.pnl_pct);
+    const lbl=a==='buy'?'BUY':a==='exit'?'EXIT ✓':'STOP ✗';
+    const sigs=t.signals?t.signals.join(', '):'';
+    const fields=a==='buy'
+      ?[['Entry',t.entry_price||'—',''],['Exit Target',t.exit_target||'—',''],
+        ['Stop Loss',t.stop_loss||'—',''],['Confidence',(t.confidence||'—')+'%',''],
+        ['R:R',t.rr_ratio||'—',''],['Mode',t.mode||'—','']]
+      :[['Entry',t.entry_price||'—',''],['Close',t.close_price||'—',''],
+        ['P&L',pnl.t,pnl.c],['Reason',(t.reason||'').split(' (')[0]||'—',''],
+        ['Mode',t.mode||'—','']];
+    return `<div class="tc ${a}">
+      <div class="tc-hdr"><div class="tc-sym">${t.symbol}</div><span class="tc-badge ${a}">${lbl}</span></div>
+      <div class="tc-time">${fmtDate(t.timestamp)}</div>
+      <div class="tc-body">${fields.map(([l,v,c])=>`<div class="tf"><span class="tf-l">${l}</span><span class="tf-v ${c}">${v}</span></div>`).join('')}</div>
+      ${sigs?`<div class="tc-sigs">${sigs}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+// Main
+async function load(){
+  clearErr();
+  g('content').style.display='none';
+  g('loading').style.display='block';
+  g('loadBtn').disabled=true;
+  setStatus('Loading…');
+  try {
+    const [logTxt,pos]=await Promise.all([
+      rawFetch('trades.log'),
+      jsonFetch('positions.json').catch(()=>({})),
+    ]);
+    const trades=parseJSONL(logTxt);
+    const closed=trades.filter(t=>t.action==='exit'||t.action==='stop');
+    renderSummary(closed,Object.keys(pos).length,trades);
+    drawChart(closed);
+    renderPos(pos);
+    renderTrades(trades);
+    g('content').style.display='block';
+    setStatus(`${trades.length} trades · ${new Date().toLocaleTimeString()}`);
+  } catch(err){
+    showErr(`Failed: ${err.message}`);
+    setStatus('Error');
+  } finally {
+    g('loading').style.display='none';
+    g('loadBtn').disabled=false;
+  }
+}
+load();
+</script>
+</body>
+</html>

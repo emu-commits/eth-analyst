@@ -65,6 +65,7 @@ jobs:
               github.event.inputs.paper_override ||
               vars.PAPER_TRADING || 'true'
             }}
+          GITHUB_ACTIONS_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           python -m trader.trader 2>&1 | tee run_output.txt
           echo "exit_code=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
@@ -85,7 +86,7 @@ jobs:
         run: |
           git config user.name  "ETH Trader Bot"
           git config user.email "trader-bot@users.noreply.github.com"
-          git add signals.json positions.json trades.log pool_cache.json || true
+          git add signals.json positions.json trades.log pool_cache.json ohlcv_cache.json || true
           # Only commit if there are changes
           git diff --staged --quiet || git commit -m \
             "chore: trader run $(date -u +'%Y-%m-%dT%H:%MZ') [skip ci]"
@@ -95,11 +96,11 @@ jobs:
       - name: Prepare email body
         if: steps.check_trades.outputs.traded == 'true'
         run: |
-          # Prepend a header with the run URL to the output file
-          HEADER="ETH Trader — trade executed\nRun: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\n\n"
-          echo -e "$HEADER$(cat run_output.txt)" > email_body.txt
-          # Swap the file used for email
-          mv email_body.txt run_output.txt
+          # email_body.txt is written by trader.py with full action details
+          # Fall back to run_output.txt if email_body.txt is missing
+          if [ ! -f email_body.txt ]; then
+            cp run_output.txt email_body.txt
+          fi
 
       - name: Notify on trade
         if: steps.check_trades.outputs.traded == 'true'
@@ -113,7 +114,7 @@ jobs:
           to:             ${{ secrets.NOTIFY_EMAIL_TO }}
           from:           ETH Trader <${{ secrets.NOTIFY_EMAIL_FROM }}>
           subject:        '[ETH Trader] Trade executed — ${{ github.run_number }}'
-          body_path: run_output.txt
+          body_path: email_body.txt
 
       # ── 7. Always upload run output as artifact (30 day retention) ────────────
       - name: Upload run log
