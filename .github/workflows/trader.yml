@@ -93,14 +93,22 @@ jobs:
           git push
 
       # ── 6. Email notification when a trade fires ─────────────────────────────
-      - name: Prepare email body
+      # Read email_body.txt into an output var so dawidd6/action-send-mail
+      # can use it as an inline body (body_path is not supported in v3).
+      - name: Read email body
+        id: email_body
         if: steps.check_trades.outputs.traded == 'true'
         run: |
-          # email_body.txt is written by trader.py with full action details
-          # Fall back to run_output.txt if email_body.txt is missing
-          if [ ! -f email_body.txt ]; then
-            cp run_output.txt email_body.txt
+          # Use email_body.txt if trader.py wrote it, else fall back to run output
+          if [ -f email_body.txt ] && [ -s email_body.txt ]; then
+            BODY=$(cat email_body.txt)
+          else
+            BODY=$(cat run_output.txt)
           fi
+          # Write to GITHUB_OUTPUT using multiline delimiter
+          echo "content<<EOF_BODY" >> $GITHUB_OUTPUT
+          echo "$BODY"             >> $GITHUB_OUTPUT
+          echo "EOF_BODY"          >> $GITHUB_OUTPUT
 
       - name: Notify on trade
         if: steps.check_trades.outputs.traded == 'true'
@@ -114,7 +122,7 @@ jobs:
           to:             ${{ secrets.NOTIFY_EMAIL_TO }}
           from:           ETH Trader <${{ secrets.NOTIFY_EMAIL_FROM }}>
           subject:        '[ETH Trader] Trade executed — ${{ github.run_number }}'
-          body_path: email_body.txt
+          body:           ${{ steps.email_body.outputs.content }}
 
       # ── 7. Always upload run output as artifact (30 day retention) ────────────
       - name: Upload run log
