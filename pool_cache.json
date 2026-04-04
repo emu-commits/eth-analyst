@@ -38,15 +38,15 @@
     "pool_address": "0xa3f558aebaecaf0e11ca4b2199cc5ed341edfd74",
     "dex": "Uniswap V3",
     "currency": "token",
-    "liquidity_usd": 4770557.6632,
-    "cached_at": "2026-04-02T23:24:53.579272+00:00"
+    "liquidity_usd": 4774533.9595,
+    "cached_at": "2026-04-04T01:05:16.703562+00:00"
   },
   "0xff20817765cb7f73d4bde2e66e067e58d11095c2": {
     "pool_address": "0x15e86e6f65ef7ea1dbb72a5e51a07926fb1c82e3",
     "dex": "Sushiswap",
     "currency": "token",
-    "liquidity_usd": 86453.9038,
-    "cached_at": "2026-04-02T23:25:29.209716+00:00"
+    "liquidity_usd": 85917.3386,
+    "cached_at": "2026-04-04T01:05:52.685022+00:00"
   },
   "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984": {
     "pool_address": "0x1d42064fc4beb5f8aaf85f4617ae8b3b5b8bd801",
