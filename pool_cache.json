@@ -45,8 +45,8 @@
     "pool_address": "0x15e86e6f65ef7ea1dbb72a5e51a07926fb1c82e3",
     "dex": "Sushiswap",
     "currency": "token",
-    "liquidity_usd": 86677.5528,
-    "cached_at": "2026-04-09T08:10:29.035152+00:00"
+    "liquidity_usd": 85840.0224,
+    "cached_at": "2026-04-10T08:15:20.316909+00:00"
   },
   "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984": {
     "pool_address": "0x1d42064fc4beb5f8aaf85f4617ae8b3b5b8bd801",
