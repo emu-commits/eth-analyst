@@ -38,8 +38,8 @@
     "pool_address": "0xa3f558aebaecaf0e11ca4b2199cc5ed341edfd74",
     "dex": "Uniswap V3",
     "currency": "token",
-    "liquidity_usd": 4918867.9769,
-    "cached_at": "2026-04-12T11:25:10.989227+00:00"
+    "liquidity_usd": 4006999.4065,
+    "cached_at": "2026-04-13T14:28:04.863796+00:00"
   },
   "0xff20817765cb7f73d4bde2e66e067e58d11095c2": {
     "pool_address": "0x15e86e6f65ef7ea1dbb72a5e51a07926fb1c82e3",
