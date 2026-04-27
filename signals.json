@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "generated_at": "2026-04-27T21:43:33.308211+00:00",
+  "generated_at": "2026-04-27T22:37:53.299950+00:00",
   "mode": "PAPER",
   "signals": [
     {
@@ -10,25 +10,25 @@
       "token_address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
       "dex": "Uniswap V3",
       "quote_is_usd": true,
-      "current_price": "2288.856966",
-      "change_7d_pct": -1.438,
+      "current_price": "2288.863790",
+      "change_7d_pct": -1.114,
       "entry": "2317.104367",
       "exit": "2325.209752",
-      "stop_loss": "2305.230893",
-      "rr_ratio": 0.683,
+      "stop_loss": "2305.690050",
+      "rr_ratio": 0.71,
       "verdict": "BUY",
       "confidence": 80,
       "rsi14": 36.36,
-      "bb_pct": 28.7,
-      "vwap_delta_pct": -2.097,
+      "bb_pct": 30.3,
+      "vwap_delta_pct": -2.098,
       "rsi_signal": "bullish",
       "boll_signal": "bullish",
       "vwap_signal": "bullish",
       "signals": [
         "Below VWAP"
       ],
-      "atr": "7.915650",
-      "generated_at": "2026-04-27T21:43:33.308211+00:00"
+      "atr": "7.609544",
+      "generated_at": "2026-04-27T22:37:53.299950+00:00"
     },
     {
       "symbol": "ARB/ETH",
@@ -38,7 +38,7 @@
       "dex": "Uniswap V3",
       "quote_is_usd": false,
       "current_price": "0.0000548",
-      "change_7d_pct": 0.258,
+      "change_7d_pct": 0.302,
       "entry": "0.0000554",
       "exit": "0.0000558",
       "stop_loss": "0.0000542",
@@ -47,7 +47,7 @@
       "confidence": 60,
       "rsi14": 47.56,
       "bb_pct": 53.8,
-      "vwap_delta_pct": -1.819,
+      "vwap_delta_pct": -1.826,
       "rsi_signal": "neutral",
       "boll_signal": "neutral",
       "vwap_signal": "bullish",
@@ -55,7 +55,7 @@
         "Below VWAP"
       ],
       "atr": "0.000000760",
-      "generated_at": "2026-04-27T21:43:33.308211+00:00"
+      "generated_at": "2026-04-27T22:37:53.299950+00:00"
     },
     {
       "symbol": "LINK/ETH",
@@ -74,13 +74,13 @@
       "confidence": 50,
       "rsi14": 48.69,
       "bb_pct": 58.0,
-      "vwap_delta_pct": 0.486,
+      "vwap_delta_pct": 0.489,
       "rsi_signal": "neutral",
       "boll_signal": "neutral",
       "vwap_signal": "neutral",
       "signals": [],
       "atr": "0.0000142",
-      "generated_at": "2026-04-27T21:43:33.308211+00:00"
+      "generated_at": "2026-04-27T22:37:53.299950+00:00"
     },
     {
       "symbol": "UNI/ETH",
@@ -94,7 +94,7 @@
       "entry": "0.001380",
       "exit": "0.001414",
       "stop_loss": "0.001368",
-      "rr_ratio": 2.802,
+      "rr_ratio": 2.809,
       "verdict": "HOLD",
       "confidence": 50,
       "rsi14": 51.15,
@@ -105,7 +105,7 @@
       "vwap_signal": "neutral",
       "signals": [],
       "atr": "0.00000808",
-      "generated_at": "2026-04-27T21:43:33.308211+00:00"
+      "generated_at": "2026-04-27T22:37:53.299950+00:00"
     },
     {
       "symbol": "AAVE/ETH",
@@ -114,23 +114,23 @@
       "token_address": "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9",
       "dex": "Uniswap V3",
       "quote_is_usd": false,
-      "current_price": "0.042374",
-      "change_7d_pct": 9.028,
-      "entry": "0.040474",
+      "current_price": "0.042381",
+      "change_7d_pct": 8.967,
+      "entry": "0.040560",
       "exit": "0.041985",
-      "stop_loss": "0.039972",
-      "rr_ratio": 3.013,
+      "stop_loss": "0.040039",
+      "rr_ratio": 2.733,
       "verdict": "SELL",
       "confidence": 20,
-      "rsi14": 62.78,
-      "bb_pct": 79.5,
-      "vwap_delta_pct": 6.136,
+      "rsi14": 62.87,
+      "bb_pct": 77.9,
+      "vwap_delta_pct": 6.094,
       "rsi_signal": "bearish",
       "boll_signal": "bearish",
       "vwap_signal": "bearish",
       "signals": [],
-      "atr": "0.000334",
-      "generated_at": "2026-04-27T21:43:33.308211+00:00"
+      "atr": "0.000348",
+      "generated_at": "2026-04-27T22:37:53.299950+00:00"
     },
     {
       "symbol": "POL/ETH",
@@ -140,16 +140,16 @@
       "dex": "Uniswap V3",
       "quote_is_usd": false,
       "current_price": "0.0000399",
-      "change_7d_pct": 1.515,
+      "change_7d_pct": 1.464,
       "entry": "0.0000396",
       "exit": "0.0000399",
       "stop_loss": "0.0000391",
-      "rr_ratio": 0.774,
+      "rr_ratio": 0.769,
       "verdict": "HOLD",
       "confidence": 40,
-      "rsi14": 57.77,
-      "bb_pct": 92.8,
-      "vwap_delta_pct": -9.581,
+      "rsi14": 57.43,
+      "bb_pct": 91.3,
+      "vwap_delta_pct": -9.616,
       "rsi_signal": "neutral",
       "boll_signal": "bearish",
       "vwap_signal": "bullish",
@@ -158,7 +158,7 @@
         "Below VWAP"
       ],
       "atr": "0.000000315",
-      "generated_at": "2026-04-27T21:43:33.308211+00:00"
+      "generated_at": "2026-04-27T22:37:53.299950+00:00"
     },
     {
       "symbol": "LDO/ETH",
@@ -167,23 +167,23 @@
       "token_address": "0x5A98FcBEA516Cf06857215779Fd812CA3beF1B32",
       "dex": "Uniswap V3",
       "quote_is_usd": false,
-      "current_price": "0.000174",
-      "change_7d_pct": 7.546,
+      "current_price": "0.000175",
+      "change_7d_pct": 8.204,
       "entry": "0.000161",
       "exit": "0.000172",
       "stop_loss": "0.000158",
-      "rr_ratio": 3.168,
+      "rr_ratio": 3.165,
       "verdict": "HOLD",
       "confidence": 50,
-      "rsi14": 51.65,
-      "bb_pct": 54.0,
-      "vwap_delta_pct": 0.293,
+      "rsi14": 53.52,
+      "bb_pct": 61.1,
+      "vwap_delta_pct": 0.899,
       "rsi_signal": "neutral",
       "boll_signal": "neutral",
       "vwap_signal": "neutral",
       "signals": [],
-      "atr": "0.00000229",
-      "generated_at": "2026-04-27T21:43:33.308211+00:00"
+      "atr": "0.00000230",
+      "generated_at": "2026-04-27T22:37:53.299950+00:00"
     },
     {
       "symbol": "AMP/ETH",
@@ -192,23 +192,23 @@
       "token_address": "0xfF20817765cB7f73d4bde2e66e067E58d11095C2",
       "dex": "Sushiswap",
       "quote_is_usd": false,
-      "current_price": "0.000000410",
-      "change_7d_pct": 9.824,
+      "current_price": "0.000000407",
+      "change_7d_pct": 8.334,
       "entry": "0.000000391",
       "exit": "0.000000415",
       "stop_loss": "0.000000367",
       "rr_ratio": 0.973,
       "verdict": "HOLD",
       "confidence": 50,
-      "rsi14": 54.34,
-      "bb_pct": 62.8,
-      "vwap_delta_pct": 0.47,
+      "rsi14": 52.04,
+      "bb_pct": 55.7,
+      "vwap_delta_pct": -0.456,
       "rsi_signal": "neutral",
       "boll_signal": "neutral",
       "vwap_signal": "neutral",
       "signals": [],
       "atr": "0.0000000165",
-      "generated_at": "2026-04-27T21:43:33.308211+00:00"
+      "generated_at": "2026-04-27T22:37:53.299950+00:00"
     }
   ]
 }
