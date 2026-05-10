@@ -123,13 +123,14 @@ def check_exit_or_stop(position: dict, current_price: float) -> tuple[str | None
     """
     exit_target = float(position['exit_target'])
     stop_loss   = float(position['stop_loss'])
+    entry_f     = float(position['entry_price'])
 
     if current_price >= exit_target:
-        pct = (current_price - position['entry_price']) / position['entry_price'] * 100
+        pct = (current_price - entry_f) / entry_f * 100
         return 'exit', f'price {fmt_price(current_price)} >= exit {fmt_price(exit_target)} (+{pct:.1f}%)'
 
     if current_price <= stop_loss:
-        pct = (current_price - position['entry_price']) / position['entry_price'] * 100
+        pct = (current_price - entry_f) / entry_f * 100
         return 'stop', f'price {fmt_price(current_price)} <= stop {fmt_price(stop_loss)} ({pct:.1f}%)'
 
     return None, f'price {fmt_price(current_price)} in range [{fmt_price(stop_loss)}, {fmt_price(exit_target)}]'
