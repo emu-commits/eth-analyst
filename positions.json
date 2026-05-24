@@ -53,10 +53,10 @@
     "pool_address": "0xcfecc1c9f3cb6190cb1ff7f65a130bfbe5107d38",
     "pool_fee": 3000,
     "entry_price": "0.000163",
-    "exit_target": "0.000167",
+    "exit_target": "0.000166",
     "stop_loss": "0.000163",
     "weth_in_wei": 100000000000000000,
-    "opened_at": "2026-05-24T15:52:15.210387+00:00",
+    "opened_at": "2026-05-24T20:00:17.622259+00:00",
     "tx_hash": "PAPER"
   }
 }
