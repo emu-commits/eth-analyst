@@ -8,18 +8,18 @@
 POSITION_SIZE_PCT = 0.10
 
 # Maximum number of simultaneously open positions
-MAX_OPEN_POSITIONS = 8
+MAX_OPEN_POSITIONS = 4
 
 # Minimum confidence score (0-100) required to enter a trade
-MIN_CONFIDENCE = 80
+MIN_CONFIDENCE = 90
 
 # Minimum R:R ratio required to enter a trade
-MIN_RR = 1.5
+MIN_RR = 2.0
 
 # How close to the entry zone price must be to trigger entry (as a fraction).
-# e.g. 0.02 means current price must be within 2% above the entry price.
+# e.g. 0.01 means current price must be within 1% above the entry price.
 # Prevents entering a trade when price is far above the computed entry.
-ENTRY_TOLERANCE = 0.02
+ENTRY_TOLERANCE = 0.01
 
 # ── SIGNAL ANALYSIS PARAMETERS ───────────────────────────────────────────────
 
@@ -33,8 +33,12 @@ BB_MULT   = 2.0
 # ATR period (used for stop loss sizing)
 ATR_PERIOD = 14
 
-# ATR multiplier for stop loss (stop = entry - ATR * ATR_STOP_MULT)
-ATR_STOP_MULT = 1.5
+# ATR multiplier for stop loss (stop = current_price - ATR * ATR_STOP_MULT)
+ATR_STOP_MULT = 2.5
+
+# Minimum stop distance as a fraction of current price.
+# Prevents stops being placed inside normal market noise.
+MIN_STOP_PCT = 0.025
 
 # Support/resistance local window (candles either side)
 SR_WINDOW = 4
