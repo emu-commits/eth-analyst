@@ -173,9 +173,10 @@ def generate_signal(candles: list[dict], pair: dict,
     if exit_ <= entry:
         exit_ = entry * 1.03
 
-    stop  = entry - atr * config.ATR_STOP_MULT
-    risk  = max(entry - stop, 1e-18)
-    rr    = (exit_ - entry) / risk
+    stop  = current - atr * config.ATR_STOP_MULT
+    stop  = min(stop, current * (1 - config.MIN_STOP_PCT))
+    risk  = max(current - stop, 1e-18)
+    rr    = (exit_ - current) / risk
 
     # ── Scoring ───────────────────────────────────────────────────────────────
     score    = 0
@@ -200,8 +201,8 @@ def generate_signal(candles: list[dict], pair: dict,
     if   current < vwap * 0.99: score += 1; vwap_sig = 'bullish'; signals.append('Below VWAP')
     elif current > vwap * 1.01: score -= 1; vwap_sig = 'bearish'
 
-    if   change_7d < -8:  score += 1; signals.append('7D dip')
-    elif change_7d > 15:  score -= 1
+    if   change_7d < -8:  score -= 1; signals.append('7D downtrend')
+    elif change_7d > 10:  score += 1; signals.append('7D momentum')
 
     # Determine verdict
     verdict = 'BUY' if score >= 3 else 'SELL' if score <= -2 else 'HOLD'
