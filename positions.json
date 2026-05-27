@@ -10,17 +10,5 @@
     "weth_in_wei": 100000000000000000,
     "opened_at": "2026-05-23T08:01:39.905763+00:00",
     "tx_hash": "PAPER"
-  },
-  "ARB/ETH": {
-    "symbol": "ARB/ETH",
-    "token_address": "0xB50721BCf8d664c30412Cfbc6cf7a15145234ad1",
-    "pool_address": "0x59354356ec5d56306791873f567d61ebf11dfbd5",
-    "pool_fee": 3000,
-    "entry_price": "0.0000504",
-    "exit_target": "0.0000530",
-    "stop_loss": "0.0000500",
-    "weth_in_wei": 100000000000000000,
-    "opened_at": "2026-05-24T11:56:35.150381+00:00",
-    "tx_hash": "PAPER"
   }
 }
