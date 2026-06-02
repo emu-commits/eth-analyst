@@ -16,11 +16,11 @@
     "token_address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
     "pool_address": "0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640",
     "pool_fee": 3000,
-    "entry_price": "1925.301026",
-    "exit_target": "2023.801293",
-    "stop_loss": "1877.168500",
+    "entry_price": "1870.923086",
+    "exit_target": "2023.648856",
+    "stop_loss": "1824.150009",
     "weth_in_wei": 100000000000000000,
-    "opened_at": "2026-06-02T17:58:12.877484+00:00",
+    "opened_at": "2026-06-02T22:53:17.682470+00:00",
     "tx_hash": "PAPER"
   }
 }
