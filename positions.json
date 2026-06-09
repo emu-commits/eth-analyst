@@ -22,5 +22,17 @@
     "weth_in_wei": 100000000000000000,
     "opened_at": "2026-06-05T15:45:48.373693+00:00",
     "tx_hash": "PAPER"
+  },
+  "POL/ETH": {
+    "symbol": "POL/ETH",
+    "token_address": "0x455e53CBB86018Ac2B8092FdCd39d8444aFFC3F6",
+    "pool_address": "0x88ada7b1dd1c728ea87404cea7a0780139eb35d1",
+    "pool_fee": 3000,
+    "entry_price": "0.0000458",
+    "exit_target": "0.0000483",
+    "stop_loss": "0.0000446",
+    "weth_in_wei": 100000000000000000,
+    "opened_at": "2026-06-09T05:57:42.551930+00:00",
+    "tx_hash": "PAPER"
   }
 }
