@@ -136,6 +136,172 @@ def check_exit_or_stop(position: dict, current_price: float) -> tuple[str | None
     return None, f'price {fmt_price(current_price)} in range [{fmt_price(stop_loss)}, {fmt_price(exit_target)}]'
 
 
+# ── EMAIL BODY ────────────────────────────────────────────────────────────────
+
+def write_email_body(actions: list, open_positions: dict,
+                     mode_str: str, run_time: str) -> None:
+    from datetime import datetime, timezone as _tz
+
+    W = 52
+
+    def bar(): return '─' * W
+
+    def fmt_dt(iso):
+        try:
+            return datetime.fromisoformat(iso).strftime('%d %b %Y  %H:%M UTC')
+        except Exception:
+            return iso[:16]
+
+    def fmt_pnl(pct):
+        if pct is None:
+            return ''
+        return f'+{pct:.2f}%' if pct >= 0 else f'{pct:.2f}%'
+
+    def held_str(opened_at):
+        if not opened_at:
+            return ''
+        try:
+            opened = datetime.fromisoformat(opened_at)
+            now    = datetime.fromisoformat(run_time)
+            delta  = now - opened
+            d, h   = delta.days, delta.seconds // 3600
+            return f'{d}d {h}h' if d else f'{h}h'
+        except Exception:
+            return ''
+
+    def pct_diff(a, b):
+        try:
+            a, b = float(a), float(b)
+            return f'{(b - a) / a * 100:+.1f}%'
+        except Exception:
+            return ''
+
+    lines = []
+
+    exits = [a for a in actions if a['action'] == 'exit']
+    stops = [a for a in actions if a['action'] == 'stop']
+    buys  = [a for a in actions if a['action'] == 'buy']
+
+    # ── Header ────────────────────────────────────────────────────────────────
+    n_ev   = len(exits) + len(stops)
+    n_buys = len(buys)
+    parts  = []
+    if exits:  parts.append(f'{len(exits)} exit{"s" if len(exits)>1 else ""}')
+    if stops:  parts.append(f'{len(stops)} stop{"s" if len(stops)>1 else ""}')
+    if buys:   parts.append(f'{n_buys} new entr{"ies" if n_buys>1 else "y"}')
+    headline = ' · '.join(parts)
+
+    lines += [
+        '=' * W,
+        f'  ETH TRADER  [{mode_str}]',
+        f'  {fmt_dt(run_time)}',
+        f'  {headline}',
+        '=' * W,
+    ]
+
+    # ── Exits ─────────────────────────────────────────────────────────────────
+    for a in exits:
+        pnl_str = fmt_pnl(a.get('pnl_pct'))
+        held    = held_str(a.get('opened_at', ''))
+        header  = f'  TARGET HIT  {a["symbol"]}'
+        lines  += [
+            '',
+            header + pnl_str.rjust(W - len(header)),
+            bar(),
+            f'  {"Gained":8}  {pnl_str}' + (f'  (held {held})' if held else ''),
+            '',
+            f'  {"Opened at":8}  {a.get("entry_price", "?")}',
+            f'  {"Closed at":8}  {a.get("close_price", "?")}',
+            f'  {"Target":8}  {a.get("exit_target", "?")}',
+        ]
+        reason = a.get('reason', '')
+        if reason:
+            lines += ['', f'  Why  {reason}']
+
+    # ── Stops ─────────────────────────────────────────────────────────────────
+    for a in stops:
+        pnl_str = fmt_pnl(a.get('pnl_pct'))
+        held    = held_str(a.get('opened_at', ''))
+        header  = f'  STOP LOSS   {a["symbol"]}'
+        lines  += [
+            '',
+            header + pnl_str.rjust(W - len(header)),
+            bar(),
+            f'  {"Lost":8}  {pnl_str}' + (f'  (held {held})' if held else ''),
+            '',
+            f'  {"Opened at":8}  {a.get("entry_price", "?")}',
+            f'  {"Closed at":8}  {a.get("close_price", "?")}',
+            f'  {"Stop":8}  {a.get("stop_loss", "?")}',
+        ]
+        reason = a.get('reason', '')
+        if reason:
+            lines += ['', f'  Why  {reason}']
+
+    # ── New entries ───────────────────────────────────────────────────────────
+    for a in buys:
+        ep   = a.get('entry_price', '?')
+        et   = a.get('exit_target', '?')
+        sl   = a.get('stop_loss',   '?')
+        rr   = a.get('rr_ratio',    '?')
+        conf = a.get('confidence',  '?')
+        sigs = a.get('signals', [])
+        lines += [
+            '',
+            f'  NEW ENTRY   {a["symbol"]}',
+            bar(),
+            f'  {"Entry":8}  {ep}',
+            f'  {"Target":8}  {et}  ({pct_diff(ep, et)})',
+            f'  {"Stop":8}  {sl}  ({pct_diff(ep, sl)})',
+            f'  {"R:R":8}  {rr}  ·  confidence {conf}%',
+        ]
+        if sigs:
+            lines += ['', f'  Why  {" · ".join(sigs)}']
+
+    # ── Run summary ───────────────────────────────────────────────────────────
+    closed = exits + stops
+    if closed:
+        net     = sum(a.get('pnl_pct', 0) for a in closed)
+        net_str = fmt_pnl(net)
+        lines  += ['', '=' * W, '  SUMMARY']
+        if exits:
+            win_strs = '  '.join(fmt_pnl(a.get('pnl_pct')) for a in exits)
+            lines.append(f'  Wins   ({len(exits)})   {win_strs}')
+        if stops:
+            loss_strs = '  '.join(fmt_pnl(a.get('pnl_pct')) for a in stops)
+            lines.append(f'  Losses ({len(stops)})   {loss_strs}')
+        lines.append(f'  Net this run     {net_str}')
+
+    # ── Open positions ────────────────────────────────────────────────────────
+    if open_positions:
+        lines += ['', '=' * W, f'  OPEN POSITIONS ({len(open_positions)})']
+        for sym, p in open_positions.items():
+            ep  = p.get('entry_price', '?')
+            et  = p.get('exit_target', '?')
+            sl  = p.get('stop_loss',   '?')
+            age = held_str(p.get('opened_at', ''))
+            age_str = f'  [{age}]' if age else ''
+            lines.append(f'  {sym:10}  @ {ep}{age_str}')
+            lines.append(f'  {"":10}  target {et}   stop {sl}')
+
+    lines += ['', '=' * W]
+
+    Path('email_body.txt').write_text('\n'.join(lines) + '\n')
+
+    # Write subject line for the workflow to pick up
+    subj_parts = []
+    if exits:  subj_parts.append(f'{len(exits)} exit{"s" if len(exits)>1 else ""}')
+    if stops:  subj_parts.append(f'{len(stops)} stop{"s" if len(stops)>1 else ""}')
+    if buys:   subj_parts.append(f'{len(buys)} entr{"ies" if len(buys)>1 else "y"}')
+    net_pct = sum(a.get('pnl_pct', 0) for a in exits + stops)
+    net_str = f'{net_pct:+.2f}%' if exits or stops else ''
+    subj = f'[ETH Trader] {", ".join(subj_parts)}'
+    if net_str:
+        subj += f' — net {net_str}'
+    if mode_str == 'PAPER':
+        subj += ' [PAPER]'
+    Path('email_subject.txt').write_text(subj)
+
+
 # ── MAIN ──────────────────────────────────────────────────────────────────────
 
 def main():
@@ -270,6 +436,9 @@ def main():
                 'reason':        reason,
                 'entry_price':   str(position['entry_price']),
                 'close_price':   fmt_price(close_px) if close_px else None,
+                'exit_target':   str(position['exit_target']),
+                'stop_loss':     str(position['stop_loss']),
+                'opened_at':     position.get('opened_at', ''),
                 'pnl_pct':       pnl,
                 'tx_hash':       result['tx_hash'],
                 'mode':          mode_str,
@@ -341,34 +510,26 @@ def main():
     save_json(config.POSITIONS_FILE, open_positions)
     logger.info(f'Saved positions.json ({len(open_positions)} open)')
 
-    # ── SUMMARY (printed to stdout — captured by Actions for email) ───────────
-    print('\n' + '═' * 60)
-    print(f'ETH Trader Run — {mode_str} — {run_time}')
-    print('═' * 60)
-    print(f'Pairs analyzed:   {len(all_signals)}/{len(config.PAIRS)}')
-    print(f'Open positions:   {len(open_positions)}')
-    print(f'Actions taken:    {len(actions_taken)}')
-    if errors:
-        print(f'Errors:           {len(errors)}')
-        for e in errors:
-            print(f'  ▸ {e}')
-
-    if actions_taken:
-        print('\nActions:')
-        for a in actions_taken:
-            print(f'  {a["action"].upper():6} {a["symbol"]:10} '
-                  f'@ {a.get("entry_price", a.get("close_price", "?"))}'
-                  f'  tx={a["tx_hash"]}')
-
-    print('\nSignals:')
+    # ── SUMMARY (printed to stdout, captured in run log artifact) ────────────
+    print(f'\nETH Trader — {mode_str} — {run_time}')
+    print(f'Pairs: {len(all_signals)}/{len(config.PAIRS)}  '
+          f'Open: {len(open_positions)}  '
+          f'Actions: {len(actions_taken)}  '
+          f'Errors: {len(errors)}')
+    for a in actions_taken:
+        pnl = f'  pnl={a["pnl_pct"]:+.2f}%' if a.get('pnl_pct') is not None else ''
+        print(f'  {a["action"].upper():6} {a["symbol"]:10}'
+              f' @ {a.get("entry_price", a.get("close_price", "?"))}{pnl}')
     for s in all_signals:
         marker = '→' if s['symbol'] in open_positions else ' '
         print(f'  {marker} {s["symbol"]:10} {s["verdict"]:4} '
-              f'conf={s["confidence"]:3d}% '
-              f'R:R={s["rr_ratio"]:.2f} '
-              f'price={s["current_price"]}')
+              f'conf={s["confidence"]:3d}% R:R={s["rr_ratio"]:.2f}')
+    for e in errors:
+        print(f'  ERROR {e}')
 
-    print('═' * 60 + '\n')
+    # ── EMAIL (written to file, picked up by Actions workflow) ────────────────
+    if actions_taken:
+        write_email_body(actions_taken, open_positions, mode_str, run_time)
 
     # Exit with error code if there were errors (triggers Actions failure alert)
     if errors and not all_signals:
