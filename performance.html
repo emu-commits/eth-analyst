@@ -181,7 +181,7 @@ function fmtPnl(pct){
   return{t:`${pct>=0?'+':''}${pct.toFixed(2)}%`,c:pct>=0?'p':'n'};
 }
 
-// Equity curve
+// Equity curve (x-axis = time)
 function drawChart(closed){
   const svg=g('chart'), W=g('cw').clientWidth-28, H=120;
   svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
@@ -189,22 +189,27 @@ function drawChart(closed){
     svg.innerHTML=`<text x="${W/2}" y="${H/2}" text-anchor="middle" fill="#5a7080" font-size="11" font-family="Space Mono">No closed trades yet</text>`;
     return;
   }
+  // Sort chronologically, build cumulative P&L points keyed by timestamp
+  const sorted=[...closed].sort((a,b)=>new Date(a.timestamp)-new Date(b.timestamp));
   let cum=0;
-  const pts=[{i:0,y:0}];
-  closed.forEach((t,i)=>{cum+=(t.pnl_pct||0);pts.push({i:i+1,y:cum});});
+  const t0=new Date(sorted[0].timestamp).getTime();
+  const pts=[{t:t0,y:0}];
+  sorted.forEach(t=>{cum+=(t.pnl_pct||0);pts.push({t:new Date(t.timestamp).getTime(),y:cum});});
   const minY=Math.min(...pts.map(p=>p.y)), maxY=Math.max(...pts.map(p=>p.y)), rng=maxY-minY||1;
+  const tMin=pts[0].t, tMax=pts[pts.length-1].t, tRng=(tMax-tMin)||1;
   const pad=18;
-  const tx=i=>pad+(i/(pts.length-1))*(W-pad*2);
+  const tx=t=>pad+((t-tMin)/tRng)*(W-pad*2);
   const ty=y=>H-pad-((y-minY)/rng)*(H-pad*2);
-  const poly=pts.map(p=>`${tx(p.i)},${ty(p.y)}`).join(' ');
+  const poly=pts.map(p=>`${tx(p.t)},${ty(p.y)}`).join(' ');
   const zY=ty(0), col=cum>=0?'#00e5a0':'#ff4d6a';
-  const fill=`${tx(0)},${zY} ${poly} ${tx(pts.length-1)},${zY}`;
+  const fill=`${tx(tMin)},${zY} ${poly} ${tx(tMax)},${zY}`;
+  const fmtAxis=ms=>new Date(ms).toLocaleDateString('en-US',{month:'short',day:'numeric'});
   svg.innerHTML=`
     <line x1="${pad}" y1="${zY}" x2="${W-pad}" y2="${zY}" stroke="#1c2530" stroke-width="1" stroke-dasharray="3,3"/>
     <polygon points="${fill}" fill="${col}" opacity="0.08"/>
     <polyline points="${poly}" fill="none" stroke="${col}" stroke-width="2" stroke-linejoin="round"/>
-    <text x="${pad}" y="${H-3}" fill="#5a7080" font-size="9" font-family="Space Mono">0</text>
-    <text x="${W-pad}" y="${H-3}" fill="#5a7080" font-size="9" font-family="Space Mono" text-anchor="end">${closed.length} trades</text>
+    <text x="${pad}" y="${H-3}" fill="#5a7080" font-size="9" font-family="Space Mono">${fmtAxis(tMin)}</text>
+    <text x="${W-pad}" y="${H-3}" fill="#5a7080" font-size="9" font-family="Space Mono" text-anchor="end">${fmtAxis(tMax)}</text>
     <text x="${W-pad}" y="${pad-4}" fill="${col}" font-size="10" font-family="Space Mono" text-anchor="end" font-weight="bold">${cum>=0?'+':''}${cum.toFixed(1)}%</text>`;
 }
 
