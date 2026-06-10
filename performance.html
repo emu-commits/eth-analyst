@@ -291,10 +291,10 @@ async function load(){
     const trades=parseJSONL(logTxt);
     const closed=trades.filter(t=>t.action==='exit'||t.action==='stop');
     renderSummary(closed,Object.keys(pos).length,trades);
-    drawChart(closed);
     renderPos(pos);
     renderTrades(trades);
     g('content').style.display='block';
+    drawChart(closed);
     setStatus(`${trades.length} trades · ${new Date().toLocaleTimeString()}`);
   } catch(err){
     showErr(`Failed: ${err.message}`);
