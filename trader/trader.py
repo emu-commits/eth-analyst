@@ -72,9 +72,52 @@ def fee_from_dex_name(dex: str) -> int:
     return 3000  # default: 0.3%
 
 
+# ── STOP COOLDOWN ─────────────────────────────────────────────────────────────
+
+def stop_cooldowns(now: datetime) -> dict:
+    """
+    Map of symbol → cooldown-expiry datetime, built from recent stop-losses
+    in trades.log.
+
+    A symbol that stopped out may not be re-entered for STOP_COOLDOWN_HOURS,
+    multiplied by the number of stops on that symbol in the past 7 days
+    (1 stop = 24h, 2 stops = 48h, ...). This breaks the stop→re-buy loop
+    where the same falling market that triggered the stop immediately
+    regenerates a BUY signal.
+    """
+    from datetime import timedelta
+
+    week_ago = now - timedelta(days=7)
+    stops: dict[str, list[datetime]] = {}
+    try:
+        with open(config.TRADES_LOG) as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    t = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if t.get('action') != 'stop':
+                    continue
+                ts = datetime.fromisoformat(t['timestamp'])
+                if week_ago <= ts <= now:
+                    stops.setdefault(t['symbol'], []).append(ts)
+    except FileNotFoundError:
+        return {}
+
+    cooldowns = {}
+    for sym, times in stops.items():
+        last = max(times)
+        cooldowns[sym] = last + timedelta(hours=config.STOP_COOLDOWN_HOURS * len(times))
+    return cooldowns
+
+
 # ── ENTRY CONDITION ───────────────────────────────────────────────────────────
 
-def should_enter(signal: dict, open_positions: dict) -> tuple[bool, str]:
+def should_enter(signal: dict, open_positions: dict,
+                 cooldowns: dict, now: datetime) -> tuple[bool, str]:
     """
     Returns (True, reason) if all entry conditions are met, (False, reason) if not.
 
@@ -82,9 +125,10 @@ def should_enter(signal: dict, open_positions: dict) -> tuple[bool, str]:
       1. Verdict is BUY
       2. Confidence >= MIN_CONFIDENCE
       3. R:R >= MIN_RR
-      4. Current price is within ENTRY_TOLERANCE above the entry zone
-      5. No existing open position for this symbol
-      6. Total open positions < MAX_OPEN_POSITIONS
+      4. Symbol is not in post-stop cooldown
+      5. Current price is within ENTRY_TOLERANCE above the entry zone
+      6. No existing open position for this symbol
+      7. Total open positions < MAX_OPEN_POSITIONS
     """
     sym = signal['symbol']
 
@@ -96,6 +140,10 @@ def should_enter(signal: dict, open_positions: dict) -> tuple[bool, str]:
 
     if signal['rr_ratio'] < config.MIN_RR:
         return False, f"R:R {signal['rr_ratio']:.2f} < {config.MIN_RR}"
+
+    cd = cooldowns.get(sym)
+    if cd and now < cd:
+        return False, f"stop cooldown until {cd.strftime('%Y-%m-%d %H:%M')} UTC"
 
     price = float(signal['current_price'])
     entry = float(signal['entry'])
@@ -455,9 +503,14 @@ def main():
     # ── PHASE 3: Check entry for new signals ──────────────────────────────────
     logger.info('Checking entry conditions…')
 
+    # Computed after phase 2 so stops executed this run are included —
+    # a symbol stopped out this hour must not be re-bought this hour.
+    now       = datetime.now(timezone.utc)
+    cooldowns = stop_cooldowns(now)
+
     for signal in all_signals:
         sym    = signal['symbol']
-        enter, reason = should_enter(signal, open_positions)
+        enter, reason = should_enter(signal, open_positions, cooldowns, now)
         logger.info(f'  {sym}: enter={enter} — {reason}')
 
         if not enter:

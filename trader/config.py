@@ -21,6 +21,17 @@ MIN_RR = 2.0
 # Prevents entering a trade when price is far above the computed entry.
 ENTRY_TOLERANCE = 0.01
 
+# Hours to wait before re-entering a symbol after a stop-loss fires.
+# Scales linearly with the number of stops on that symbol in the past
+# 7 days (1 stop = 24h, 2 stops = 48h, ...). Prevents repeatedly
+# re-buying into the same falling market that triggered the stop.
+STOP_COOLDOWN_HOURS = 24
+
+# Block BUY entries entirely when the 7-day change is below this (%).
+# Mean-reversion longs during a steep decline were the dominant
+# historical loss source (5 consecutive ETH/USDC stops, May-Jun 2026).
+MAX_7D_DECLINE_FOR_ENTRY = -8.0
+
 # ── SIGNAL ANALYSIS PARAMETERS ───────────────────────────────────────────────
 
 # RSI period

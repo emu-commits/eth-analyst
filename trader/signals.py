@@ -212,6 +212,13 @@ def generate_signal(candles: list[dict], pair: dict,
         verdict = 'HOLD'
         signals.append('R:R too thin — downgraded')
 
+    # Crash veto: never BUY into a steep 7-day decline. The oversold
+    # indicators score highest mid-crash, which is exactly when
+    # mean-reversion entries have historically lost the most.
+    if verdict == 'BUY' and change_7d < config.MAX_7D_DECLINE_FOR_ENTRY:
+        verdict = 'HOLD'
+        signals.append('Crash veto — 7D decline too steep')
+
     confidence = min(100, max(0, 50 + score * 10))
 
     return {
