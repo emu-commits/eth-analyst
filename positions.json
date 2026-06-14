@@ -1,16 +1,4 @@
 {
-  "LDO/ETH": {
-    "symbol": "LDO/ETH",
-    "token_address": "0x5A98FcBEA516Cf06857215779Fd812CA3beF1B32",
-    "pool_address": "0xcfecc1c9f3cb6190cb1ff7f65a130bfbe5107d38",
-    "pool_fee": 3000,
-    "entry_price": "0.000159",
-    "exit_target": "0.000167",
-    "stop_loss": "0.000155",
-    "weth_in_wei": 100000000000000000,
-    "opened_at": "2026-05-28T09:54:29.745021+00:00",
-    "tx_hash": "PAPER"
-  },
   "ETH/USDC": {
     "symbol": "ETH/USDC",
     "token_address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
