@@ -3,56 +3,56 @@
     "pool_address": "0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640",
     "dex": "Uniswap V3",
     "currency": "usd",
-    "liquidity_usd": 89424345.1597,
-    "cached_at": "2026-06-16T16:49:57.199274+00:00"
+    "liquidity_usd": 89341066.0783,
+    "cached_at": "2026-06-17T17:41:19.322296+00:00"
   },
   "0xb50721bcf8d664c30412cfbc6cf7a15145234ad1": {
     "pool_address": "0x59354356ec5d56306791873f567d61ebf11dfbd5",
     "dex": "Uniswap V3",
     "currency": "token",
-    "liquidity_usd": 21058.549,
-    "cached_at": "2026-06-16T16:50:02.778457+00:00"
+    "liquidity_usd": 21721.6266,
+    "cached_at": "2026-06-17T17:41:24.635990+00:00"
   },
   "0x514910771af9ca656af840dff83e8264ecf986ca": {
     "pool_address": "0xa6cc3c2531fdaa6ae1a3ca84c2855806728693e8",
     "dex": "Uniswap V3",
     "currency": "token",
-    "liquidity_usd": 17790568.7458,
-    "cached_at": "2026-06-16T16:50:08.540168+00:00"
+    "liquidity_usd": 17976746.7681,
+    "cached_at": "2026-06-17T17:41:30.135566+00:00"
   },
   "0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9": {
     "pool_address": "0x5ab53ee1d50eef2c1dd3d5402789cd27bb52c1bb",
     "dex": "Uniswap V3",
     "currency": "token",
-    "liquidity_usd": 3277831.6136,
-    "cached_at": "2026-06-16T16:51:19.539772+00:00"
+    "liquidity_usd": 3434482.1066,
+    "cached_at": "2026-06-17T17:42:40.872248+00:00"
   },
   "0x455e53cbb86018ac2b8092fdcd39d8444affc3f6": {
     "pool_address": "0x88ada7b1dd1c728ea87404cea7a0780139eb35d1",
     "dex": "Uniswap V3",
     "currency": "token",
-    "liquidity_usd": 23922.6583,
-    "cached_at": "2026-06-16T16:51:25.506930+00:00"
+    "liquidity_usd": 23873.2892,
+    "cached_at": "2026-06-17T17:43:16.230885+00:00"
   },
   "0x5a98fcbea516cf06857215779fd812ca3bef1b32": {
     "pool_address": "0xa3f558aebaecaf0e11ca4b2199cc5ed341edfd74",
     "dex": "Uniswap V3",
     "currency": "token",
-    "liquidity_usd": 540051.7944,
-    "cached_at": "2026-06-16T16:52:01.264186+00:00"
+    "liquidity_usd": 567395.7041,
+    "cached_at": "2026-06-17T17:43:21.785682+00:00"
   },
   "0xff20817765cb7f73d4bde2e66e067e58d11095c2": {
     "pool_address": "0x15e86e6f65ef7ea1dbb72a5e51a07926fb1c82e3",
     "dex": "Sushiswap",
     "currency": "token",
-    "liquidity_usd": 61276.482,
-    "cached_at": "2026-06-16T16:52:37.221122+00:00"
+    "liquidity_usd": 62138.6057,
+    "cached_at": "2026-06-17T17:43:57.384217+00:00"
   },
   "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984": {
     "pool_address": "0x1d42064fc4beb5f8aaf85f4617ae8b3b5b8bd801",
     "dex": "Uniswap V3",
     "currency": "token",
-    "liquidity_usd": 12505512.4476,
-    "cached_at": "2026-06-16T16:50:14.331928+00:00"
+    "liquidity_usd": 12931719.2963,
+    "cached_at": "2026-06-17T17:42:05.516216+00:00"
   }
 }
