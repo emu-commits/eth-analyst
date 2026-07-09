@@ -1,22 +1,21 @@
 ====================================================
   ETH TRADER  [PAPER]
-  15 Jun 2026  15:34 UTC
-  1 exit
+  09 Jul 2026  18:44 UTC
+  1 new entry
 ====================================================
 
-  TARGET HIT  ETH/USDC                       +14.66%
+  NEW ENTRY   LDO/ETH
 ────────────────────────────────────────────────────
-  Gained    +14.66%  (held 9d 23h)
+  Entry     0.000173
+  Target    0.000189  (+9.2%)
+  Stop      0.000166  (-4.0%)
+  R:R       2.279  ·  confidence 100%
 
-  Opened at  1583.415776
-  Closed at  1815.606883
-  Target    1800.997898
-
-  Why  price 1815.606883 >= exit 1800.997898 (+14.7%)
+  Why  Near BB lower · Below VWAP · 7D momentum
 
 ====================================================
-  SUMMARY
-  Wins   (1)   +14.66%
-  Net this run     +14.66%
+  OPEN POSITIONS (1)
+  LDO/ETH     @ 0.000173  [0h]
+              target 0.000189   stop 0.000166
 
 ====================================================
