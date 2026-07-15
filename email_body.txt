@@ -1,21 +1,23 @@
 ====================================================
   ETH TRADER  [PAPER]
-  09 Jul 2026  18:44 UTC
+  15 Jul 2026  15:15 UTC
   1 new entry
 ====================================================
 
-  NEW ENTRY   LDO/ETH
+  NEW ENTRY   ARB/ETH
 ────────────────────────────────────────────────────
-  Entry     0.000173
-  Target    0.000189  (+9.2%)
-  Stop      0.000166  (-4.0%)
-  R:R       2.279  ·  confidence 100%
+  Entry     0.0000467
+  Target    0.0000497  (+6.4%)
+  Stop      0.0000454  (-2.8%)
+  R:R       2.223  ·  confidence 100%
 
-  Why  Near BB lower · Below VWAP · 7D momentum
+  Why  RSI oversold · Near BB lower · Below VWAP
 
 ====================================================
-  OPEN POSITIONS (1)
-  LDO/ETH     @ 0.000173  [0h]
+  OPEN POSITIONS (2)
+  LDO/ETH     @ 0.000173  [5d 20h]
               target 0.000189   stop 0.000166
+  ARB/ETH     @ 0.0000467  [0h]
+              target 0.0000497   stop 0.0000454
 
 ====================================================
