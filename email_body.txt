@@ -1,25 +1,29 @@
 ====================================================
   ETH TRADER  [PAPER]
-  15 Jul 2026  18:50 UTC
-  1 new entry
+  16 Jul 2026  04:46 UTC
+  1 exit
 ====================================================
 
-  NEW ENTRY   AAVE/ETH
+  TARGET HIT  LDO/ETH                         +9.83%
 ────────────────────────────────────────────────────
-  Entry     0.050110
-  Target    0.053146  (+6.1%)
-  Stop      0.048857  (-2.5%)
-  R:R       2.423  ·  confidence 100%
+  Gained    +9.83%  (held 6d 10h)
 
-  Why  RSI oversold · Near BB lower · Below VWAP
+  Opened at  0.000173
+  Closed at  0.000190
+  Target    0.000189
+
+  Why  price 0.000190 >= exit 0.000189 (+9.8%)
 
 ====================================================
-  OPEN POSITIONS (3)
-  LDO/ETH     @ 0.000173  [6d 0h]
-              target 0.000189   stop 0.000166
-  ARB/ETH     @ 0.0000467  [3h]
+  SUMMARY
+  Wins   (1)   +9.83%
+  Net this run     +9.83%
+
+====================================================
+  OPEN POSITIONS (2)
+  ARB/ETH     @ 0.0000467  [13h]
               target 0.0000497   stop 0.0000454
-  AAVE/ETH    @ 0.050110  [0h]
+  AAVE/ETH    @ 0.050110  [9h]
               target 0.053146   stop 0.048857
 
 ====================================================
