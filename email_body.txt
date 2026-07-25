@@ -1,22 +1,21 @@
 ====================================================
   ETH TRADER  [PAPER]
-  16 Jul 2026  22:44 UTC
-  1 stop
+  25 Jul 2026  04:52 UTC
+  1 new entry
 ====================================================
 
-  STOP LOSS   AAVE/ETH                        -2.60%
+  NEW ENTRY   ARB/ETH
 ────────────────────────────────────────────────────
-  Lost      -2.60%  (held 1d 3h)
+  Entry     0.0000441
+  Target    0.0000464  (+5.2%)
+  Stop      0.0000430  (-2.5%)
+  R:R       2.145  ·  confidence 90%
 
-  Opened at  0.050110
-  Closed at  0.048809
-  Stop      0.048857
-
-  Why  price 0.048809 <= stop 0.048857 (-2.6%)
+  Why  Near BB lower · Below VWAP
 
 ====================================================
-  SUMMARY
-  Losses (1)   -2.60%
-  Net this run     -2.60%
+  OPEN POSITIONS (1)
+  ARB/ETH     @ 0.0000441  [0h]
+              target 0.0000464   stop 0.0000430
 
 ====================================================
