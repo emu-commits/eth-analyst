@@ -1,21 +1,22 @@
 ====================================================
   ETH TRADER  [PAPER]
-  11 Aug 2026  16:42 UTC
-  1 new entry
+  12 Aug 2026  07:02 UTC
+  1 stop
 ====================================================
 
-  NEW ENTRY   UNI/ETH
+  STOP LOSS   UNI/ETH                         -3.62%
 ────────────────────────────────────────────────────
-  Entry     0.001991
-  Target    0.002116  (+6.3%)
-  Stop      0.001934  (-2.9%)
-  R:R       2.185  ·  confidence 100%
+  Lost      -3.62%  (held 14h)
 
-  Why  RSI oversold · Near BB lower · Below VWAP
+  Opened at  0.001991
+  Closed at  0.001919
+  Stop      0.001934
+
+  Why  price 0.001919 <= stop 0.001934 (-3.6%)
 
 ====================================================
-  OPEN POSITIONS (1)
-  UNI/ETH     @ 0.001991  [0h]
-              target 0.002116   stop 0.001934
+  SUMMARY
+  Losses (1)   -3.62%
+  Net this run     -3.62%
 
 ====================================================
