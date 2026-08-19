@@ -1,21 +1,22 @@
 ====================================================
   ETH TRADER  [PAPER]
-  19 Aug 2026  18:14 UTC
-  1 new entry
+  19 Aug 2026  21:13 UTC
+  1 stop
 ====================================================
 
-  NEW ENTRY   AAVE/ETH
+  STOP LOSS   AAVE/ETH                        -2.58%
 ────────────────────────────────────────────────────
-  Entry     0.044152
-  Target    0.046557  (+5.4%)
-  Stop      0.043048  (-2.5%)
-  R:R       2.179  ·  confidence 100%
+  Lost      -2.58%  (held 2h)
 
-  Why  RSI oversold · Near BB lower · Below VWAP
+  Opened at  0.044152
+  Closed at  0.043015
+  Stop      0.043048
+
+  Why  price 0.043015 <= stop 0.043048 (-2.6%)
 
 ====================================================
-  OPEN POSITIONS (1)
-  AAVE/ETH    @ 0.044152  [0h]
-              target 0.046557   stop 0.043048
+  SUMMARY
+  Losses (1)   -2.58%
+  Net this run     -2.58%
 
 ====================================================
