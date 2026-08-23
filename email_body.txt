@@ -1,21 +1,22 @@
 ====================================================
   ETH TRADER  [PAPER]
-  19 Aug 2026  22:11 UTC
-  1 new entry
+  23 Aug 2026  13:23 UTC
+  1 exit
 ====================================================
 
-  NEW ENTRY   LDO/ETH
+  TARGET HIT  LDO/ETH                         +7.48%
 ────────────────────────────────────────────────────
-  Entry     0.000147
-  Target    0.000157  (+6.8%)
-  Stop      0.000143  (-2.7%)
-  R:R       2.717  ·  confidence 100%
+  Gained    +7.48%  (held 3d 15h)
 
-  Why  RSI oversold · Near BB lower · Below VWAP
+  Opened at  0.000147
+  Closed at  0.000158
+  Target    0.000157
+
+  Why  price 0.000158 >= exit 0.000157 (+7.5%)
 
 ====================================================
-  OPEN POSITIONS (1)
-  LDO/ETH     @ 0.000147  [0h]
-              target 0.000157   stop 0.000143
+  SUMMARY
+  Wins   (1)   +7.48%
+  Net this run     +7.48%
 
 ====================================================
