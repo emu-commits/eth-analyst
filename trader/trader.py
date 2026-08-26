@@ -26,6 +26,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from trader import config
 from trader.gt_client import resolve_pool, fetch_ohlcv, fetch_current_price, _load_pool_cache_stale
 from trader.signals import generate_signal, fmt_price
+from trader.costs import round_trip_cost, min_viable_notional_usd
 from trader.executor import Executor
 
 # ── LOGGING ───────────────────────────────────────────────────────────────────
@@ -114,23 +115,104 @@ def stop_cooldowns(now: datetime) -> dict:
     return cooldowns
 
 
+# ── TRADE LEDGER ──────────────────────────────────────────────────────────────
+
+def closed_trades() -> list[dict]:
+    """Every exit/stop record in trades.log, oldest first."""
+    out = []
+    try:
+        with open(config.TRADES_LOG) as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    t = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if t.get('action') in ('exit', 'stop'):
+                    out.append(t)
+    except FileNotFoundError:
+        return []
+    return out
+
+
+def net_pnl(trade: dict) -> float:
+    """
+    Net P&L of a closed trade.
+
+    Records written before the cost model existed carry only a gross pnl_pct.
+    They are read at face value rather than retroactively charged — the point
+    is to stop producing misleading numbers, not to rewrite history.
+    """
+    return float(trade.get('pnl_pct') or 0.0)
+
+
+# ── CIRCUIT BREAKER ───────────────────────────────────────────────────────────
+
+def check_breaker() -> str | None:
+    """
+    Returns a reason string when new entries should be suspended, else None.
+
+    The system traded through a five-month, -20% gross drawdown without ever
+    pausing, because nothing in it looked at its own results. This is the
+    feedback loop: if the last BREAKER_LOOKBACK closed trades have negative
+    net expectancy, stop opening new positions. Open positions are still
+    managed to their exits.
+
+    It is deliberately easy to clear — a single good run of trades re-arms it —
+    because the goal is to stop compounding a losing configuration, not to
+    permanently disable the bot.
+    """
+    if not config.BREAKER_ENABLED:
+        return None
+
+    closed = closed_trades()
+    if len(closed) < config.BREAKER_MIN_TRADES:
+        return None
+
+    window = closed[-config.BREAKER_LOOKBACK:]
+    pnls   = [net_pnl(t) for t in window]
+    exp    = sum(pnls) / len(pnls)
+
+    if exp < config.BREAKER_MIN_EXPECTANCY:
+        wins = sum(1 for p in pnls if p > 0)
+        return (f'net expectancy {exp:+.2f}%/trade over last {len(window)} '
+                f'closed trades ({wins}/{len(window)} wins) — new entries '
+                f'suspended until it turns positive')
+    return None
+
+
 # ── ENTRY CONDITION ───────────────────────────────────────────────────────────
 
 def should_enter(signal: dict, open_positions: dict,
-                 cooldowns: dict, now: datetime) -> tuple[bool, str]:
+                 cooldowns: dict, now: datetime,
+                 cost: dict | None = None,
+                 breaker: str | None = None) -> tuple[bool, str]:
     """
     Returns (True, reason) if all entry conditions are met, (False, reason) if not.
 
     Conditions (all must be true):
-      1. Verdict is BUY
-      2. Confidence >= MIN_CONFIDENCE
-      3. R:R >= MIN_RR
-      4. Symbol is not in post-stop cooldown
-      5. Current price is within ENTRY_TOLERANCE above the entry zone
-      6. No existing open position for this symbol
-      7. Total open positions < MAX_OPEN_POSITIONS
+      1. The circuit breaker is not tripped
+      2. Verdict is BUY
+      3. Confidence >= MIN_CONFIDENCE
+      4. R:R >= MIN_RR
+      5. Pool is liquid enough to trade, and our size is small against it
+      6. The move to target clears the round-trip cost by MIN_EDGE_COST_MULTIPLE
+      7. Symbol is not in post-stop cooldown
+      8. Current price is within ENTRY_TOLERANCE above the entry zone
+      9. No existing open position for this symbol
+     10. Total open positions < MAX_OPEN_POSITIONS
+
+    Conditions 1, 5 and 6 are the ones this system spent five months without.
+    The indicator gates (2-4) were tightened three times and never addressed
+    the actual problem, which was that trades were taken whose best case did
+    not cover the cost of taking them.
     """
     sym = signal['symbol']
+
+    if breaker:
+        return False, f'circuit breaker: {breaker}'
 
     if signal['verdict'] != 'BUY':
         return False, f"verdict={signal['verdict']}"
@@ -140,6 +222,38 @@ def should_enter(signal: dict, open_positions: dict,
 
     if signal['rr_ratio'] < config.MIN_RR:
         return False, f"R:R {signal['rr_ratio']:.2f} < {config.MIN_RR}"
+
+    liq = float(signal.get('liquidity_usd') or 0)
+    if liq < config.MIN_POOL_LIQUIDITY_USD:
+        return False, (f'pool liquidity ${liq:,.0f} < '
+                       f'${config.MIN_POOL_LIQUIDITY_USD:,.0f} floor')
+
+    if cost:
+        notional = cost['notional_usd']
+
+        # Position too small to amortise gas. Reported as a sizing problem
+        # with the number attached, because that is what it is — refusing
+        # every trade forever without saying why is how a bot looks healthy
+        # while doing nothing useful.
+        if cost['gas_pct'] > config.MAX_GAS_COST_PCT:
+            need = min_viable_notional_usd(cost['gas_gwei'], cost['eth_usd'])
+            return False, (f'position ${notional:,.0f} too small — gas is '
+                           f'{cost["gas_pct"]:.2f}% of it round trip '
+                           f'(ceiling {config.MAX_GAS_COST_PCT}%); needs '
+                           f'≥${need:,.0f} at {cost["gas_gwei"]:.1f} gwei')
+
+        if liq > 0 and notional > liq * config.MAX_POOL_SHARE:
+            return False, (f'position ${notional:,.0f} exceeds '
+                           f'{config.MAX_POOL_SHARE:.2%} of ${liq:,.0f} pool')
+
+        move     = float(signal.get('target_move_pct') or 0)
+        required = max(cost['total_pct'] * config.MIN_EDGE_COST_MULTIPLE,
+                       config.MIN_TARGET_MOVE_PCT)
+        if move < required:
+            return False, (f'target move {move:.2f}% < {required:.2f}% required '
+                           f'(round-trip cost {cost["total_pct"]:.2f}%: '
+                           f'fee {cost["lp_fee_pct"]:.2f} + gas {cost["gas_pct"]:.2f} '
+                           f'+ impact {cost["impact_pct"]:.2f})')
 
     cd = cooldowns.get(sym)
     if cd and now < cd:
@@ -162,26 +276,99 @@ def should_enter(signal: dict, open_positions: dict,
 
 # ── EXIT / STOP CONDITIONS ────────────────────────────────────────────────────
 
-def check_exit_or_stop(position: dict, current_price: float) -> tuple[str | None, str]:
+def check_exit_or_stop(position: dict, current_price: float,
+                       now: datetime | None = None) -> tuple[str | None, str]:
     """
     Returns ('exit', reason), ('stop', reason), or (None, reason).
 
-    Checks current price against the exit target and stop loss stored
-    when the position was opened.
+    MUTATES `position` — it ratchets the high-water mark and the trailing stop.
+    The caller must persist positions.json after calling this.
+
+    Reaching the target no longer closes the trade. It arms a trailing stop
+    and ratchets the stop up to breakeven-after-costs, so a trade that got to
+    its target can no longer end as a loser, and can still run.
+
+    The reason for the change is in the record: over five months, 14 trades
+    closed at their fixed target for an average of +5.9%, and 48 stopped out
+    at an average of -2.15%. A 2.7:1 payoff needs a 27% win rate to break even
+    gross; the realised rate was 30.6%, so the strategy was hovering at gross
+    breakeven and losing badly net of costs. The only period with a positive
+    gross expectancy earned all of it from three trades that ran well past
+    where a fixed target would have sold — +14.7%, +9.8%, +7.5%. Capping the
+    right tail is what made the arithmetic unwinnable.
     """
+    now         = now or datetime.now(timezone.utc)
     exit_target = float(position['exit_target'])
-    stop_loss   = float(position['stop_loss'])
     entry_f     = float(position['entry_price'])
+    stop_loss   = float(position['stop_loss'])
+    armed       = bool(position.get('trail_armed'))
 
-    if current_price >= exit_target:
+    # ── Time stop ─────────────────────────────────────────────────────────────
+    opened_at = position.get('opened_at')
+    if opened_at:
+        try:
+            age_h = (now - datetime.fromisoformat(opened_at)).total_seconds() / 3600
+            if age_h > config.MAX_HOLD_HOURS:
+                pct = (current_price - entry_f) / entry_f * 100
+                return 'exit', (f'time stop — held {age_h/24:.1f}d > '
+                                f'{config.MAX_HOLD_HOURS/24:.0f}d ({pct:+.1f}%)')
+        except ValueError:
+            pass
+
+    if not config.TRAIL_ENABLED:
+        if current_price >= exit_target:
+            pct = (current_price - entry_f) / entry_f * 100
+            return 'exit', (f'price {fmt_price(current_price)} >= exit '
+                            f'{fmt_price(exit_target)} (+{pct:.1f}%)')
+        if current_price <= stop_loss:
+            pct = (current_price - entry_f) / entry_f * 100
+            return 'stop', (f'price {fmt_price(current_price)} <= stop '
+                            f'{fmt_price(stop_loss)} ({pct:.1f}%)')
+        return None, (f'price {fmt_price(current_price)} in range '
+                      f'[{fmt_price(stop_loss)}, {fmt_price(exit_target)}]')
+
+    # ── Arm the trail on first touch of the target ────────────────────────────
+    if not armed and current_price >= exit_target:
+        armed = True
+        position['trail_armed'] = True
+        position['high_water']  = fmt_price(current_price)
+        logger.info(f'  {position["symbol"]}: target reached — trailing stop armed')
+
+    if not armed:
+        if current_price <= stop_loss:
+            pct = (current_price - entry_f) / entry_f * 100
+            return 'stop', (f'price {fmt_price(current_price)} <= stop '
+                            f'{fmt_price(stop_loss)} ({pct:.1f}%)')
+        return None, (f'price {fmt_price(current_price)} below target '
+                      f'{fmt_price(exit_target)}, stop {fmt_price(stop_loss)}')
+
+    # ── Armed: ratchet the high-water mark and the trailing stop ──────────────
+    high_water = max(float(position.get('high_water') or current_price), current_price)
+    position['high_water'] = fmt_price(high_water)
+
+    atr        = float(position.get('atr') or 0)
+    trail_dist = max(atr * config.TRAIL_ATR_MULT,
+                     high_water * config.TRAIL_MIN_PCT)
+
+    # Once armed, the floor is entry plus a cost buffer, so a trade that
+    # reached its target should not end negative. "Should not" rather than
+    # "cannot" — positions are only checked hourly, so price can gap straight
+    # through the trail and fill well below it. That gap risk is inherent to
+    # running on a cron schedule and is not something a stop level can fix.
+    cost_pct   = float(position.get('cost_pct') or 0)
+    breakeven  = entry_f * (1 + cost_pct * config.BREAKEVEN_COST_MULTIPLE / 100)
+    trail_stop = max(high_water - trail_dist, breakeven, stop_loss)
+    position['stop_loss'] = fmt_price(trail_stop)
+
+    if current_price <= trail_stop:
         pct = (current_price - entry_f) / entry_f * 100
-        return 'exit', f'price {fmt_price(current_price)} >= exit {fmt_price(exit_target)} (+{pct:.1f}%)'
+        return 'exit', (f'trailing stop — price {fmt_price(current_price)} <= '
+                        f'{fmt_price(trail_stop)}, peak {fmt_price(high_water)} '
+                        f'({pct:+.1f}%)')
 
-    if current_price <= stop_loss:
-        pct = (current_price - entry_f) / entry_f * 100
-        return 'stop', f'price {fmt_price(current_price)} <= stop {fmt_price(stop_loss)} ({pct:.1f}%)'
-
-    return None, f'price {fmt_price(current_price)} in range [{fmt_price(stop_loss)}, {fmt_price(exit_target)}]'
+    pct = (current_price - entry_f) / entry_f * 100
+    return None, (f'trailing — price {fmt_price(current_price)} ({pct:+.1f}%), '
+                  f'peak {fmt_price(high_water)}, trail {fmt_price(trail_stop)}')
 
 
 # ── EMAIL BODY ────────────────────────────────────────────────────────────────
@@ -247,6 +434,25 @@ def write_email_body(actions: list, open_positions: dict,
         '=' * W,
     ]
 
+    def cost_lines(a: dict) -> list:
+        """
+        Gross → cost → net, shown on every closed trade.
+
+        The whole reason this project spent five months tuning against
+        meaningless numbers is that the cost was invisible. Putting it in the
+        notification keeps it in front of whoever reads the result.
+        """
+        if a.get('pnl_pct_gross') is None:
+            return []
+        out = ['',
+               f'  {"Gross":8}  {fmt_pnl(a["pnl_pct_gross"])}',
+               f'  {"Cost":8}  −{a.get("cost_pct", 0):.2f}%',
+               f'  {"Net":8}  {fmt_pnl(a.get("pnl_pct"))}']
+        peak = a.get('peak_price')
+        if a.get('trail_armed') and peak:
+            out.append(f'  {"Peak":8}  {peak}  (trailing stop was armed)')
+        return out
+
     # ── Exits ─────────────────────────────────────────────────────────────────
     for a in exits:
         pnl_str = fmt_pnl(a.get('pnl_pct'))
@@ -261,7 +467,7 @@ def write_email_body(actions: list, open_positions: dict,
             f'  {"Opened at":8}  {a.get("entry_price", "?")}',
             f'  {"Closed at":8}  {a.get("close_price", "?")}',
             f'  {"Target":8}  {a.get("exit_target", "?")}',
-        ]
+        ] + cost_lines(a)
         reason = a.get('reason', '')
         if reason:
             lines += ['', f'  Why  {reason}']
@@ -280,7 +486,7 @@ def write_email_body(actions: list, open_positions: dict,
             f'  {"Opened at":8}  {a.get("entry_price", "?")}',
             f'  {"Closed at":8}  {a.get("close_price", "?")}',
             f'  {"Stop":8}  {a.get("stop_loss", "?")}',
-        ]
+        ] + cost_lines(a)
         reason = a.get('reason', '')
         if reason:
             lines += ['', f'  Why  {reason}']
@@ -415,7 +621,7 @@ def main():
                 currency  = pool_info['currency']
                 candles   = fetch_ohlcv(pool_addr, currency)
 
-            signal  = generate_signal(candles, pair, pool_addr, dex)
+            signal  = generate_signal(candles, pair, pool_addr, dex, liq)
             signal['generated_at'] = run_time
             all_signals.append(signal)
 
@@ -450,6 +656,8 @@ def main():
     # Build a quick price lookup from freshly generated signals
     price_map = {s['symbol']: float(s['current_price']) for s in all_signals}
 
+    now_utc = datetime.now(timezone.utc)
+
     positions_to_close = []
     for sym, position in open_positions.items():
         current_price = price_map.get(sym)
@@ -457,7 +665,9 @@ def main():
             logger.warning(f'  {sym}: no fresh price available — skipping exit check')
             continue
 
-        action, reason = check_exit_or_stop(position, current_price)
+        # Mutates `position` (high-water mark, ratcheted trailing stop).
+        # open_positions holds the same dict, so save_json below persists it.
+        action, reason = check_exit_or_stop(position, current_price, now_utc)
         if action:
             positions_to_close.append((sym, position, action, reason))
             logger.info(f'  {sym}: {action.upper()} triggered — {reason}')
@@ -476,20 +686,34 @@ def main():
             del open_positions[sym]
             close_px = price_map.get(sym, 0)
             entry_f  = float(position['entry_price'])
-            pnl      = round((close_px - entry_f) / entry_f * 100, 2) if entry_f else 0
+            gross    = round((close_px - entry_f) / entry_f * 100, 3) if entry_f else 0.0
+
+            # Charge the round-trip cost estimated when the position was opened.
+            # pnl_pct is the NET figure — it is what performance.html plots and
+            # what the circuit breaker reads. Paper P&L that ignores fees, gas
+            # and price impact is how this project spent five months tuning a
+            # strategy against numbers that could not happen.
+            cost_pct = float(position.get('cost_pct') or 0.0)
+            pnl      = round(gross - cost_pct, 3)
+
             entry = {
-                'timestamp':     run_time,
-                'action':        action,
-                'symbol':        sym,
-                'reason':        reason,
-                'entry_price':   str(position['entry_price']),
-                'close_price':   fmt_price(close_px) if close_px else None,
-                'exit_target':   str(position['exit_target']),
-                'stop_loss':     str(position['stop_loss']),
-                'opened_at':     position.get('opened_at', ''),
-                'pnl_pct':       pnl,
-                'tx_hash':       result['tx_hash'],
-                'mode':          mode_str,
+                'timestamp':      run_time,
+                'action':         action,
+                'symbol':         sym,
+                'reason':         reason,
+                'entry_price':    str(position['entry_price']),
+                'close_price':    fmt_price(close_px) if close_px else None,
+                'exit_target':    str(position['exit_target']),
+                'stop_loss':      str(position['stop_loss']),
+                'opened_at':      position.get('opened_at', ''),
+                'pnl_pct':        pnl,
+                'pnl_pct_gross':  gross,
+                'cost_pct':       round(cost_pct, 3),
+                'cost_breakdown': position.get('cost_breakdown'),
+                'peak_price':     position.get('high_water'),
+                'trail_armed':    bool(position.get('trail_armed')),
+                'tx_hash':        result['tx_hash'],
+                'mode':           mode_str,
             }
             append_trade_log(entry)
             actions_taken.append(entry)
@@ -508,16 +732,44 @@ def main():
     now       = datetime.now(timezone.utc)
     cooldowns = stop_cooldowns(now)
 
+    breaker = check_breaker()
+    if breaker:
+        logger.warning(f'  CIRCUIT BREAKER TRIPPED — {breaker}')
+
+    # Live inputs to the cost model. Both fall back to config assumptions so a
+    # failed RPC call degrades the estimate rather than skipping the gate.
+    eth_usd = price_map.get('ETH/USDC') or config.ASSUMED_ETH_USD
+    try:
+        gas_gwei = executor.w3.eth.gas_price / 1e9
+    except Exception as gas_err:
+        gas_gwei = config.ASSUMED_GAS_GWEI
+        logger.warning(f'  gas price unavailable ({gas_err}) — '
+                       f'assuming {gas_gwei} gwei')
+
+    weth_amount_wei = executor.calc_position_size_wei()
+    notional_usd    = weth_amount_wei / 1e18 * eth_usd
+    logger.info(f'  position size {weth_amount_wei / 1e18:.4f} WETH '
+                f'(≈${notional_usd:,.0f}) at {gas_gwei:.1f} gwei')
+
     for signal in all_signals:
-        sym    = signal['symbol']
-        enter, reason = should_enter(signal, open_positions, cooldowns, now)
+        sym  = signal['symbol']
+        cost = round_trip_cost(
+            pool_fee      = fee_from_dex_name(signal['dex']),
+            liquidity_usd = float(signal.get('liquidity_usd') or 0),
+            notional_usd  = notional_usd,
+            gas_price_gwei = gas_gwei,
+            eth_usd        = eth_usd,
+        )
+        signal['round_trip_cost_pct'] = cost['total_pct']
+
+        enter, reason = should_enter(signal, open_positions, cooldowns, now,
+                                     cost=cost, breaker=breaker)
         logger.info(f'  {sym}: enter={enter} — {reason}')
 
         if not enter:
             continue
 
         try:
-            weth_amount_wei = executor.calc_position_size_wei()
             result = executor.swap_weth_for_token(
                 token_address   = signal['token_address'],
                 pool_fee        = fee_from_dex_name(signal['dex']),
@@ -532,6 +784,11 @@ def main():
                 'entry_price':   signal['current_price'],  # fmt_price string
                 'exit_target':   signal['exit'],           # fmt_price string
                 'stop_loss':     signal['stop_loss'],      # fmt_price string
+                'atr':           signal['atr'],            # drives the trail
+                'cost_pct':      cost['total_pct'],
+                'cost_breakdown': cost,
+                'trail_armed':   False,
+                'high_water':    signal['current_price'],
                 'weth_in_wei':   weth_amount_wei,
                 'opened_at':     run_time,
                 'tx_hash':       result['tx_hash'],
@@ -541,6 +798,10 @@ def main():
                 'timestamp':   run_time,
                 'action':      'buy',
                 'symbol':      sym,
+                'cost_pct':    cost['total_pct'],
+                'cost_breakdown': cost,
+                'target_move_pct': signal.get('target_move_pct'),
+                'liquidity_usd':   signal.get('liquidity_usd'),
                 'entry_price': signal['current_price'],
                 'exit_target': signal['exit'],
                 'stop_loss':   signal['stop_loss'],

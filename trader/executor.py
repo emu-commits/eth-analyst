@@ -60,6 +60,45 @@ SWAP_ROUTER_ABI = json.loads('''[
   }
 ]''')
 
+# Uniswap V3 QuoterV2 — used to price a swap before sending it so that
+# amountOutMinimum can be expressed in the OUTPUT token's units.
+#
+# The previous implementation computed min_out as a percentage of amountIn,
+# which is a different token with different decimals. Two consequences, both
+# severe, both latent because the bot has only ever run in paper mode:
+#   - Entries: min_out was ~0.0995 WETH-worth of units against an output
+#     measured in whole tokens, so the check passed trivially. A live entry
+#     had no slippage protection at all and was free money for a sandwich bot.
+#   - Exits: min_out was ~99.5% of the token amount, expressed as if it were
+#     WETH. Selling 2,164 ARB for 0.1 WETH would have demanded a minimum of
+#     2,153 WETH. Every live exit would have reverted, leaving positions
+#     unsellable while their stops sat there doing nothing.
+QUOTER_V2_ADDRESS = '0x61fFE014bA17989E743c5F6cB21bF9697530B21e'
+QUOTER_V2_ABI = json.loads('''[
+  {
+    "name": "quoteExactInputSingle",
+    "type": "function",
+    "stateMutability": "nonpayable",
+    "inputs": [{
+      "name": "params",
+      "type": "tuple",
+      "components": [
+        {"name":"tokenIn",  "type":"address"},
+        {"name":"tokenOut", "type":"address"},
+        {"name":"amountIn", "type":"uint256"},
+        {"name":"fee",      "type":"uint24"},
+        {"name":"sqrtPriceLimitX96","type":"uint160"}
+      ]
+    }],
+    "outputs": [
+      {"name":"amountOut","type":"uint256"},
+      {"name":"sqrtPriceX96After","type":"uint160"},
+      {"name":"initializedTicksCrossed","type":"uint32"},
+      {"name":"gasEstimate","type":"uint256"}
+    ]
+  }
+]''')
+
 # Standard Uniswap V3 fee tiers
 FEE_TIERS = [500, 3000, 10000]  # 0.05%, 0.3%, 1%
 
@@ -93,6 +132,11 @@ class Executor:
         if not self.w3.is_connected():
             raise ConnectionError('Could not connect to Ethereum node via Alchemy')
 
+        self.quoter = self.w3.eth.contract(
+            address=Web3.to_checksum_address(QUOTER_V2_ADDRESS),
+            abi=QUOTER_V2_ABI,
+        )
+
         if not paper:
             pk = os.environ.get('WALLET_PRIVATE_KEY')
             if not pk:
@@ -117,8 +161,10 @@ class Executor:
             abi=ERC20_ABI,
         )
         if self.paper:
-            # In paper mode, simulate 1 WETH balance for sizing calculations
-            return Web3.to_wei(1, 'ether')
+            # Simulated balance for sizing. Configurable because position size
+            # determines the gas cost percentage, which determines whether any
+            # trade is economically viable at all.
+            return Web3.to_wei(config.PAPER_WETH_BALANCE, 'ether')
         return weth.functions.balanceOf(self.account.address).call()
 
     def get_token_balance(self, token_address: str) -> tuple[int, int]:
@@ -151,6 +197,44 @@ class Executor:
         balance = self.get_weth_balance()
         return int(balance * config.POSITION_SIZE_PCT)
 
+    # ── QUOTING ───────────────────────────────────────────────────────────────
+
+    def quote_min_out(self, token_in: str, token_out: str,
+                      amount_in: int, pool_fee: int) -> int:
+        """
+        Ask QuoterV2 what this swap would return right now, and subtract the
+        slippage tolerance. The result is in the OUTPUT token's units, which is
+        what exactInputSingle's amountOutMinimum actually means.
+
+        Raises rather than returning a permissive default. A swap sent with no
+        real minimum is a swap that can be sandwiched for its entire value, so
+        failing the trade is strictly better than guessing.
+        """
+        params = {
+            'tokenIn':  Web3.to_checksum_address(token_in),
+            'tokenOut': Web3.to_checksum_address(token_out),
+            'amountIn': amount_in,
+            'fee':      pool_fee,
+            'sqrtPriceLimitX96': 0,
+        }
+        try:
+            # QuoterV2 is declared nonpayable (it reverts internally to return
+            # data), so it must be simulated with .call() rather than sent.
+            amount_out = self.quoter.functions.quoteExactInputSingle(params).call()[0]
+        except Exception as e:
+            raise RuntimeError(
+                f'QuoterV2 could not price {token_in[:8]}…→{token_out[:8]}… '
+                f'at fee {pool_fee}: {e}'
+            ) from e
+
+        if amount_out <= 0:
+            raise RuntimeError(
+                f'QuoterV2 returned a zero quote for {token_in[:8]}…→'
+                f'{token_out[:8]}… at fee {pool_fee} — refusing to swap blind'
+            )
+
+        return int(amount_out * (1 - config.SLIPPAGE_TOLERANCE))
+
     # ── SWAP: WETH → TOKEN (entry) ────────────────────────────────────────────
 
     def swap_weth_for_token(self, token_address: str, pool_fee: int,
@@ -164,7 +248,6 @@ class Executor:
         weth_cs  = Web3.to_checksum_address(config.WETH_ADDRESS)
         token_cs = Web3.to_checksum_address(token_address)
         amount   = weth_amount_wei
-        min_out  = int(amount * (1 - config.SLIPPAGE_TOLERANCE))  # simplified
         deadline = int(time.time()) + config.TX_DEADLINE_SECONDS
 
         log_msg = (f'SWAP WETH→{token_address[:8]}… '
@@ -184,6 +267,9 @@ class Executor:
             }
 
         logger.info(f'[LIVE] {log_msg}')
+
+        min_out = self.quote_min_out(weth_cs, token_cs, amount, pool_fee)
+        logger.info(f'[LIVE] quoted minimum out: {min_out} raw token units')
 
         # Approve router to spend WETH
         self._approve_token(weth_cs, SWAP_ROUTER_ADDRESS, amount)
@@ -236,7 +322,6 @@ class Executor:
         weth_cs  = Web3.to_checksum_address(config.WETH_ADDRESS)
         token_cs = Web3.to_checksum_address(token_address)
         amount   = token_amount_wei
-        min_out  = int(amount * (1 - config.SLIPPAGE_TOLERANCE))
         deadline = int(time.time()) + config.TX_DEADLINE_SECONDS
 
         log_msg = (f'SWAP {token_address[:8]}…→WETH '
@@ -255,6 +340,10 @@ class Executor:
             }
 
         logger.info(f'[LIVE] {log_msg}')
+
+        min_out = self.quote_min_out(token_cs, weth_cs, amount, pool_fee)
+        logger.info(f'[LIVE] quoted minimum out: '
+                    f'{Web3.from_wei(min_out, "ether"):.6f} WETH')
 
         self._approve_token(token_cs, SWAP_ROUTER_ADDRESS, amount)
 

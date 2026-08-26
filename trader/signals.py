@@ -130,7 +130,8 @@ def find_support_resistance(candles: list[dict]) -> dict:
 # ── SIGNAL SCORER ─────────────────────────────────────────────────────────────
 
 def generate_signal(candles: list[dict], pair: dict,
-                    pool_address: str, dex: str) -> dict:
+                    pool_address: str, dex: str,
+                    liquidity_usd: float = 0.0) -> dict:
     """
     Run all indicators on candle data and return a complete signal dict.
 
@@ -234,6 +235,9 @@ def generate_signal(candles: list[dict], pair: dict,
         'exit':          fmt_price(exit_),
         'stop_loss':     fmt_price(stop),
         'rr_ratio':      round(rr, 3),
+        'target_move_pct': round((exit_ - current) / current * 100, 3),
+        'stop_move_pct':   round((current - stop) / current * 100, 3),
+        'liquidity_usd': round(liquidity_usd, 2),
         'verdict':       verdict,
         'confidence':    confidence,
         'rsi14':         round(rsi, 2) if rsi is not None else None,

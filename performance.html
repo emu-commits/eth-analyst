@@ -220,6 +220,11 @@ function renderSummary(closed, openCnt, all){
   const tot=closed.reduce((s,t)=>s+(t.pnl_pct||0),0);
   const avg=closed.length?tot/closed.length:0;
   const buys=all.filter(t=>t.action==='buy').length;
+  // Gross is shown alongside net so the gap between them stays visible.
+  // Trades closed before the cost model existed carry no cost_pct and read
+  // as gross==net; that is the era whose numbers were misleading.
+  const gross=closed.reduce((s,t)=>s+(t.pnl_pct_gross!=null?t.pnl_pct_gross:(t.pnl_pct||0)),0);
+  const costs=closed.reduce((s,t)=>s+(t.cost_pct||0),0);
   const pc=tot>=0?'p':'n', ac=avg>=0?'p':'n';
   const wc=!closed.length?'u':parseFloat(wr)>=50?'p':'n';
   g('sg').innerHTML=[
@@ -227,8 +232,10 @@ function renderSummary(closed, openCnt, all){
     {v:closed.length,l:'Closed',c:''},
     {v:openCnt,l:'Open',c:openCnt>0?'u':''},
     {v:wr,l:'Win Rate',c:wc},
-    {v:`${tot>=0?'+':''}${tot.toFixed(1)}%`,l:'Total P&L',c:pc},
-    {v:`${avg>=0?'+':''}${avg.toFixed(1)}%`,l:'Avg P&L',c:ac},
+    {v:`${gross>=0?'+':''}${gross.toFixed(1)}%`,l:'Gross P&L',c:gross>=0?'p':'n'},
+    {v:`−${costs.toFixed(1)}%`,l:'Est. Costs',c:costs>0?'n':'u'},
+    {v:`${tot>=0?'+':''}${tot.toFixed(1)}%`,l:'Net P&L',c:pc},
+    {v:`${avg>=0?'+':''}${avg.toFixed(2)}%`,l:'Net / Trade',c:ac},
   ].map(s=>`<div class="stat"><div class="stat-v ${s.c}">${s.v}</div><div class="stat-l">${s.l}</div></div>`).join('');
 }
 

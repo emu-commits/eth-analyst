@@ -4,11 +4,26 @@
 
 # ── TRADING PARAMETERS ────────────────────────────────────────────────────────
 
-# Fraction of WETH balance to allocate per new position (0.10 = 10%)
-POSITION_SIZE_PCT = 0.10
+# Fraction of WETH balance to allocate per new position.
+#
+# Raised from 0.10 because 10% of a 1 WETH book is a ~$245 position, and two
+# mainnet swaps cost ~$6 in gas regardless of size — 2.6% round trip, against
+# an average winner of ~6% arriving 30% of the time. The strategy was paying
+# a third of its best case to the network on every trade. See docs/POSTMORTEM.md.
+POSITION_SIZE_PCT = 0.25
 
-# Maximum number of simultaneously open positions
+# Maximum number of simultaneously open positions.
+# 4 x 25% = fully deployed at four concurrent positions.
 MAX_OPEN_POSITIONS = 4
+
+# Simulated WETH balance used for position sizing in paper mode.
+#
+# This is not a cosmetic number. It sets the paper position size, which sets
+# the modelled gas cost, which decides whether trades pass the viability gate.
+# Set it to the amount you would actually deploy — if that is below roughly
+# 2 WETH, the honest paper result on mainnet is "no trades", and that is the
+# correct answer rather than a bug.
+PAPER_WETH_BALANCE = 5.0
 
 # Minimum confidence score (0-100) required to enter a trade
 MIN_CONFIDENCE = 90
@@ -31,6 +46,91 @@ STOP_COOLDOWN_HOURS = 24
 # Mean-reversion longs during a steep decline were the dominant
 # historical loss source (5 consecutive ETH/USDC stops, May-Jun 2026).
 MAX_7D_DECLINE_FOR_ENTRY = -8.0
+
+# ── COST MODEL ────────────────────────────────────────────────────────────────
+# Paper trading ran for five months with zero modelled costs. Every P&L figure
+# it produced was gross, and the strategy's gross edge was smaller than the
+# cost it was ignoring. These parameters make the cost explicit so both the
+# entry gate and the paper ledger can account for it.
+
+# Gas units for one Uniswap V3 exactInputSingle swap (observed range 130k-180k).
+SWAP_GAS_UNITS = 160_000
+
+# Fallback assumptions when live chain data is unavailable (paper mode, or an
+# RPC failure). Overridden at runtime by the real gas price and ETH price.
+ASSUMED_GAS_GWEI = 8.0
+ASSUMED_ETH_USD  = 2400.0
+
+# Price impact model: impact% ≈ IMPACT_COEFF × (notional / pool liquidity) × 100
+# Crude by necessity — GeckoTerminal reports total reserve, not the tick
+# distribution that actually determines V3 fill quality. Calibrated pessimistic.
+IMPACT_COEFF   = 0.5
+MAX_IMPACT_PCT = 5.0
+
+# ── VIABILITY GATES ───────────────────────────────────────────────────────────
+# A trade must be able to pay for itself. These are the gates that the previous
+# three rounds of tuning never had: they reject a setup on economics rather
+# than on indicator quality.
+
+# Gas may not exceed this share of notional over the round trip (%). Because
+# gas is a fixed dollar amount per swap, this is really a minimum position size
+# in disguise — see costs.min_viable_notional_usd(). At 8 gwei and ETH ~$2,400
+# a 0.5% ceiling implies roughly a $1,250 position.
+MAX_GAS_COST_PCT = 0.5
+
+# The move to target must be at least this multiple of the round-trip cost.
+# At 3x, a 2% round trip demands a 6% target — which is roughly where this
+# strategy's winners actually landed.
+MIN_EDGE_COST_MULTIPLE = 3.0
+
+# Absolute floor on the target move, regardless of modelled cost (%).
+MIN_TARGET_MOVE_PCT = 4.0
+
+# Pools thinner than this are untradeable at any size we would use. The three
+# worst-performing symbols by cost-adjusted return (ARB, POL, AMP) all sat in
+# pools between $24k and $67k.
+MIN_POOL_LIQUIDITY_USD = 500_000
+
+# Position may not exceed this share of pool reserve. Paired with the
+# liquidity floor above this allows up to a $2,500 position in the thinnest
+# tradeable pool, which sits above the gas-viability floor of ~$1,250.
+MAX_POOL_SHARE = 0.005
+
+# ── EXIT MANAGEMENT ───────────────────────────────────────────────────────────
+# Historically the fixed take-profit at the nearest resistance capped winners
+# at ~+6% while stops cut at -3%. All of the profit in the only marginally
+# positive period came from three trades that ran past their target. Capping
+# them is what made the win-rate arithmetic impossible.
+
+# On reaching the target, arm a trailing stop instead of selling.
+TRAIL_ENABLED = True
+
+# Trailing stop distance below the high-water mark, in ATRs.
+TRAIL_ATR_MULT = 2.0
+
+# Floor on the trailing distance as a fraction of price, so the trail is not
+# placed inside normal hourly noise.
+TRAIL_MIN_PCT = 0.02
+
+# Once the trail is armed, the stop never sits below entry plus this multiple
+# of the round-trip cost — a trade that reached its target cannot end a loser.
+BREAKEVEN_COST_MULTIPLE = 1.5
+
+# Hard time stop. Generous by design: the single best trade in the record took
+# ten days to mature. This is a safety valve against a position being forgotten
+# (which happened for 60 days in March-May 2026), not an active exit tool.
+MAX_HOLD_HOURS = 504  # 21 days
+
+# ── CIRCUIT BREAKER ───────────────────────────────────────────────────────────
+# The system traded continuously through a -20% drawdown across five months
+# without ever pausing. It had no mechanism to notice it was losing.
+
+# Stop opening new positions when net expectancy over the last N closed trades
+# is negative. Open positions continue to be managed normally.
+BREAKER_ENABLED       = True
+BREAKER_LOOKBACK      = 15
+BREAKER_MIN_TRADES    = 10
+BREAKER_MIN_EXPECTANCY = 0.0
 
 # ── SIGNAL ANALYSIS PARAMETERS ───────────────────────────────────────────────
 

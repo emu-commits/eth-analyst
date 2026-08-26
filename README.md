@@ -16,6 +16,8 @@ trader/
 .github/workflows/
   trader.yml    ← cron schedule, runs trader.py, commits state, sends email
 
+  costs.py      ← round-trip cost model (fees, gas, price impact)
+
 signals.json    ← written every hour by trader.py (readable in repo)
 positions.json  ← current open positions (written by trader.py)
 trades.log      ← append-only trade history (one JSON line per trade)
@@ -67,34 +69,69 @@ Uses a Gmail account with an App Password:
 Go to **Actions → ETH Trader → Run workflow** → set `paper_override=true` → Run.
 Check the output log. Should see signals generated and paper trades logged.
 
+## Read this first
+
+This strategy has a documented five-month losing record: 62 closed trades,
+30.6% win rate, −20.65% gross. Read [docs/POSTMORTEM.md](docs/POSTMORTEM.md)
+before running it, and especially before switching `PAPER_TRADING` to `false`.
+
+The short version: paper mode modelled no fees, no gas and no price impact for
+five months, and the omitted cost was larger than the entire signal. That is
+now fixed — paper P&L is net, and trades that cannot pay for themselves are
+rejected rather than taken.
+
 ## Trade logic
 
 Entry fires when ALL of:
+- Circuit breaker is not tripped
 - Verdict = BUY
-- Confidence ≥ 80% (set in config.py → `MIN_CONFIDENCE`)
-- R:R ≥ 1.5 (set in config.py → `MIN_RR`)
-- Current price ≤ entry zone + 2% tolerance
-- No existing position for that symbol
-- Total open positions < 8
+- Confidence ≥ 90% (`MIN_CONFIDENCE`)
+- R:R ≥ 2.0 (`MIN_RR`)
+- Pool liquidity ≥ $500k (`MIN_POOL_LIQUIDITY_USD`)
+- Position ≤ 0.5% of pool reserve (`MAX_POOL_SHARE`)
+- Gas ≤ 0.5% of notional round trip (`MAX_GAS_COST_PCT`) — this is a minimum
+  position size in disguise, roughly $1,250 at 8 gwei
+- Move to target ≥ 3× the round-trip cost, and ≥ 4% absolute
+- 7-day change above −8% (crash veto)
+- Symbol not in post-stop cooldown
+- Current price ≤ entry zone + 1% tolerance
+- No existing position for that symbol, and fewer than 4 open
 
-Exit fires when:
-- Current price ≥ exit target (take profit)
+Exit management:
+- Reaching the target **arms a trailing stop** rather than selling. The stop
+  ratchets to entry-plus-costs, and then trails the high-water mark by
+  2× ATR (floor 2%).
+- Stop fires when price ≤ stop loss.
+- A 21-day time stop closes anything that has gone nowhere.
 
-Stop fires when:
-- Current price ≤ stop loss (cut loss)
+Circuit breaker: when net expectancy over the last 15 closed trades is negative,
+no new positions are opened. Open positions are still managed to their exits.
 
 ## Configuration
 
 All tunable parameters are in `trader/config.py`. Key ones:
 
 ```python
-POSITION_SIZE_PCT = 0.10   # 10% of WETH balance per trade
-MAX_OPEN_POSITIONS = 8
-MIN_CONFIDENCE = 80
-MIN_RR = 1.5
-ENTRY_TOLERANCE = 0.02     # price must be within 2% of entry zone
-ATR_STOP_MULT = 1.5        # stop = entry - 1.5 × ATR
+POSITION_SIZE_PCT  = 0.25   # 25% of WETH balance per trade
+MAX_OPEN_POSITIONS = 4
+PAPER_WETH_BALANCE = 5.0    # simulated book size — drives paper position size
+MIN_CONFIDENCE     = 90
+MIN_RR             = 2.0
+ENTRY_TOLERANCE    = 0.01   # price must be within 1% of entry zone
+ATR_STOP_MULT      = 2.5    # stop = current - 2.5 × ATR
+MIN_STOP_PCT       = 0.025  # stop at least 2.5% away
+
+MIN_POOL_LIQUIDITY_USD = 500_000
+MIN_EDGE_COST_MULTIPLE = 3.0
+MAX_GAS_COST_PCT       = 0.5
+TRAIL_ATR_MULT         = 2.0
+BREAKER_LOOKBACK       = 15
 ```
+
+**`PAPER_WETH_BALANCE` is not cosmetic.** It sets the paper position size, which
+sets the modelled gas cost, which decides whether any trade is viable. Set it to
+what you would actually deploy. Below roughly 2 WETH the honest result on
+mainnet is "no trades" — that is the correct answer, not a bug.
 
 ## Output files
 
@@ -106,6 +143,9 @@ After each run, the Actions workflow commits these back to your repo:
 
 ## Going live checklist
 
+- [ ] Read [docs/POSTMORTEM.md](docs/POSTMORTEM.md) in full
+- [ ] **Net** expectancy positive over ≥ 30 closed trades (not gross)
+- [ ] Circuit breaker not tripped
 - [ ] Paper traded for ≥ 7 days
 - [ ] Reviewed signals.json manually — entries/exits look reasonable
 - [ ] Dedicated wallet created (not your main wallet)
