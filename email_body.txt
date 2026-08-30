@@ -1,21 +1,22 @@
 ====================================================
   ETH TRADER  [PAPER]
-  29 Aug 2026  20:15 UTC
-  1 new entry
+  30 Aug 2026  18:52 UTC
+  1 stop
 ====================================================
 
-  NEW ENTRY   POL/ETH
+  STOP LOSS   POL/ETH                         -4.32%
 ────────────────────────────────────────────────────
-  Entry     0.0000417
-  Target    0.0000440  (+5.5%)
-  Stop      0.0000407  (-2.4%)
-  R:R       2.208  ·  confidence 100%
+  Lost      -4.32%  (held 22h)
 
-  Why  RSI oversold · Near BB lower · Below VWAP
+  Opened at  0.0000417
+  Closed at  0.0000399
+  Stop      0.0000407
+
+  Why  price 0.0000399 <= stop 0.0000407 (-4.3%)
 
 ====================================================
-  OPEN POSITIONS (1)
-  POL/ETH     @ 0.0000417  [0h]
-              target 0.0000440   stop 0.0000407
+  SUMMARY
+  Losses (1)   -4.32%
+  Net this run     -4.32%
 
 ====================================================
