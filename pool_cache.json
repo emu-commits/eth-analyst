@@ -3,22 +3,22 @@
     "pool_address": "0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640",
     "dex": "Uniswap V3",
     "currency": "usd",
-    "liquidity_usd": 105612314.133,
-    "cached_at": "2026-08-31T22:05:55.987433+00:00"
+    "liquidity_usd": 104424087.9735,
+    "cached_at": "2026-09-01T22:52:11.169477+00:00"
   },
   "0xb50721bcf8d664c30412cfbc6cf7a15145234ad1": {
     "pool_address": "0x59354356ec5d56306791873f567d61ebf11dfbd5",
     "dex": "Uniswap V3",
     "currency": "token",
-    "liquidity_usd": 27172.9977,
-    "cached_at": "2026-08-31T22:06:01.456584+00:00"
+    "liquidity_usd": 27728.7701,
+    "cached_at": "2026-09-01T22:52:16.892441+00:00"
   },
   "0x514910771af9ca656af840dff83e8264ecf986ca": {
     "pool_address": "0xa6cc3c2531fdaa6ae1a3ca84c2855806728693e8",
     "dex": "Uniswap V3",
     "currency": "token",
-    "liquidity_usd": 13837586.8524,
-    "cached_at": "2026-08-31T22:06:07.163522+00:00"
+    "liquidity_usd": 13515996.4395,
+    "cached_at": "2026-09-01T22:52:22.968272+00:00"
   },
   "0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9": {
     "pool_address": "0x5ab53ee1d50eef2c1dd3d5402789cd27bb52c1bb",
@@ -31,22 +31,22 @@
     "pool_address": "0x88ada7b1dd1c728ea87404cea7a0780139eb35d1",
     "dex": "Uniswap V3",
     "currency": "token",
-    "liquidity_usd": 32156.05,
-    "cached_at": "2026-08-31T22:07:20.838103+00:00"
+    "liquidity_usd": 31822.8151,
+    "cached_at": "2026-09-01T22:53:34.446833+00:00"
   },
   "0x5a98fcbea516cf06857215779fd812ca3bef1b32": {
     "pool_address": "0xcfecc1c9f3cb6190cb1ff7f65a130bfbe5107d38",
     "dex": "Uniswap V3",
     "currency": "token",
-    "liquidity_usd": 631492.2845,
-    "cached_at": "2026-08-31T22:07:56.438253+00:00"
+    "liquidity_usd": 639866.5178,
+    "cached_at": "2026-09-01T22:53:39.987457+00:00"
   },
   "0xff20817765cb7f73d4bde2e66e067e58d11095c2": {
     "pool_address": "0x15e86e6f65ef7ea1dbb72a5e51a07926fb1c82e3",
     "dex": "Sushiswap",
     "currency": "token",
-    "liquidity_usd": 67785.1375,
-    "cached_at": "2026-08-31T22:08:01.977642+00:00"
+    "liquidity_usd": 66236.9823,
+    "cached_at": "2026-09-01T22:54:15.890919+00:00"
   },
   "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984": {
     "pool_address": "0x1d42064fc4beb5f8aaf85f4617ae8b3b5b8bd801",
