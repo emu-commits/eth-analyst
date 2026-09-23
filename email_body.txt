@@ -1,22 +1,21 @@
 ====================================================
   ETH TRADER  [PAPER]
-  17 Sep 2026  17:46 UTC
-  1 exit
+  23 Sep 2026  21:51 UTC
+  1 new entry
 ====================================================
 
-  TARGET HIT  AAVE/ETH                        +8.30%
+  NEW ENTRY   POL/ETH
 ────────────────────────────────────────────────────
-  Gained    +8.30%  (held 1d 0h)
+  Entry     0.0000376
+  Target    0.0000402  (+6.9%)
+  Stop      0.0000363  (-3.5%)
+  R:R       2.064  ·  confidence 100%
 
-  Opened at  0.048177
-  Closed at  0.052177
-  Target    0.050970
-
-  Why  price 0.052177 >= exit 0.050970 (+8.3%)
+  Why  RSI oversold · Near BB lower · Below VWAP
 
 ====================================================
-  SUMMARY
-  Wins   (1)   +8.30%
-  Net this run     +8.30%
+  OPEN POSITIONS (1)
+  POL/ETH     @ 0.0000376  [0h]
+              target 0.0000402   stop 0.0000363
 
 ====================================================
