@@ -1,21 +1,22 @@
 ====================================================
   ETH TRADER  [PAPER]
-  23 Sep 2026  21:51 UTC
-  1 new entry
+  24 Sep 2026  22:46 UTC
+  1 exit
 ====================================================
 
-  NEW ENTRY   POL/ETH
+  TARGET HIT  POL/ETH                         +6.91%
 ────────────────────────────────────────────────────
-  Entry     0.0000376
-  Target    0.0000402  (+6.9%)
-  Stop      0.0000363  (-3.5%)
-  R:R       2.064  ·  confidence 100%
+  Gained    +6.91%  (held 1d 0h)
 
-  Why  RSI oversold · Near BB lower · Below VWAP
+  Opened at  0.0000376
+  Closed at  0.0000402
+  Target    0.0000402
+
+  Why  price 0.0000402 >= exit 0.0000402 (+6.9%)
 
 ====================================================
-  OPEN POSITIONS (1)
-  POL/ETH     @ 0.0000376  [0h]
-              target 0.0000402   stop 0.0000363
+  SUMMARY
+  Wins   (1)   +6.91%
+  Net this run     +6.91%
 
 ====================================================
