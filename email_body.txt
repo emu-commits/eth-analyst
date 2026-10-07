@@ -1,22 +1,21 @@
 ====================================================
   ETH TRADER  [PAPER]
-  24 Sep 2026  22:46 UTC
-  1 exit
+  07 Oct 2026  01:04 UTC
+  1 new entry
 ====================================================
 
-  TARGET HIT  POL/ETH                         +6.91%
+  NEW ENTRY   UNI/ETH
 ────────────────────────────────────────────────────
-  Gained    +6.91%  (held 1d 0h)
+  Entry     0.003151
+  Target    0.003310  (+5.0%)
+  Stop      0.003073  (-2.5%)
+  R:R       2.014  ·  confidence 90%
 
-  Opened at  0.0000376
-  Closed at  0.0000402
-  Target    0.0000402
-
-  Why  price 0.0000402 >= exit 0.0000402 (+6.9%)
+  Why  Near BB lower · Below VWAP
 
 ====================================================
-  SUMMARY
-  Wins   (1)   +6.91%
-  Net this run     +6.91%
+  OPEN POSITIONS (1)
+  UNI/ETH     @ 0.003151  [0h]
+              target 0.003310   stop 0.003073
 
 ====================================================
