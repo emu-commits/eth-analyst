@@ -1,21 +1,23 @@
 ====================================================
   ETH TRADER  [PAPER]
-  07 Oct 2026  01:04 UTC
+  07 Oct 2026  14:49 UTC
   1 new entry
 ====================================================
 
-  NEW ENTRY   UNI/ETH
+  NEW ENTRY   ETH/USDC
 ────────────────────────────────────────────────────
-  Entry     0.003151
-  Target    0.003310  (+5.0%)
-  Stop      0.003073  (-2.5%)
-  R:R       2.014  ·  confidence 90%
+  Entry     2558.840000
+  Target    2716.564759  (+6.2%)
+  Stop      2494.869000  (-2.5%)
+  R:R       2.466  ·  confidence 100%
 
-  Why  Near BB lower · Below VWAP
+  Why  RSI oversold · Near BB lower · Below VWAP
 
 ====================================================
-  OPEN POSITIONS (1)
-  UNI/ETH     @ 0.003151  [0h]
+  OPEN POSITIONS (2)
+  UNI/ETH     @ 0.003151  [13h]
               target 0.003310   stop 0.003073
+  ETH/USDC    @ 2558.840000  [0h]
+              target 2716.564759   stop 2494.869000
 
 ====================================================
