@@ -1,22 +1,21 @@
 ====================================================
   ETH TRADER  [PAPER]
-  08 Oct 2026  20:17 UTC
-  1 stop
+  12 Oct 2026  19:27 UTC
+  1 new entry
 ====================================================
 
-  STOP LOSS   ETH/USDC                        -3.48%
+  NEW ENTRY   AAVE/ETH
 ────────────────────────────────────────────────────
-  Lost      -3.48%  (held 1d 5h)
+  Entry     0.063896
+  Target    0.067927  (+6.3%)
+  Stop      0.062298  (-2.5%)
+  R:R       2.524  ·  confidence 100%
 
-  Opened at  2558.840000
-  Closed at  2469.870000
-  Stop      2494.869000
-
-  Why  price 2469.870000 <= stop 2494.869000 (-3.5%)
+  Why  RSI oversold · Near BB lower · Below VWAP
 
 ====================================================
-  SUMMARY
-  Losses (1)   -3.48%
-  Net this run     -3.48%
+  OPEN POSITIONS (1)
+  AAVE/ETH    @ 0.063896  [0h]
+              target 0.067927   stop 0.062298
 
 ====================================================
