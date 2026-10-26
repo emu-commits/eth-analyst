@@ -1,21 +1,23 @@
 ====================================================
   ETH TRADER  [PAPER]
-  24 Oct 2026  19:53 UTC
+  26 Oct 2026  11:40 UTC
   1 new entry
 ====================================================
 
-  NEW ENTRY   AAVE/ETH
+  NEW ENTRY   AMP/ETH
 ────────────────────────────────────────────────────
-  Entry     0.058215
-  Target    0.061197  (+5.1%)
-  Stop      0.056760  (-2.5%)
-  R:R       2.049  ·  confidence 90%
+  Entry     0.000000302
+  Target    0.000000319  (+5.6%)
+  Stop      0.000000294  (-2.6%)
+  R:R       2.268  ·  confidence 100%
 
-  Why  Near BB lower · Below VWAP
+  Why  RSI oversold · Near BB lower · Below VWAP
 
 ====================================================
-  OPEN POSITIONS (1)
-  AAVE/ETH    @ 0.058215  [0h]
+  OPEN POSITIONS (2)
+  AAVE/ETH    @ 0.058215  [1d 15h]
               target 0.061197   stop 0.056760
+  AMP/ETH     @ 0.000000302  [0h]
+              target 0.000000319   stop 0.000000294
 
 ====================================================
