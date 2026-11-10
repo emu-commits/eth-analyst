@@ -1,21 +1,22 @@
 ====================================================
   ETH TRADER  [PAPER]
-  09 Nov 2026  00:11 UTC
-  1 new entry
+  10 Nov 2026  15:52 UTC
+  1 stop
 ====================================================
 
-  NEW ENTRY   ETH/USDC
+  STOP LOSS   ETH/USDC                        -5.15%
 ────────────────────────────────────────────────────
-  Entry     2129.400000
-  Target    2249.020000  (+5.6%)
-  Stop      2076.165000  (-2.5%)
-  R:R       2.247  ·  confidence 100%
+  Lost      -5.15%  (held 1d 15h)
 
-  Why  RSI oversold · Near BB lower · Below VWAP
+  Opened at  2129.400000
+  Closed at  2019.820000
+  Stop      2076.165000
+
+  Why  price 2019.820000 <= stop 2076.165000 (-5.1%)
 
 ====================================================
-  OPEN POSITIONS (1)
-  ETH/USDC    @ 2129.400000  [0h]
-              target 2249.020000   stop 2076.165000
+  SUMMARY
+  Losses (1)   -5.15%
+  Net this run     -5.15%
 
 ====================================================

@@ -1,14 +1,1 @@
-{
-  "ETH/USDC": {
-    "symbol": "ETH/USDC",
-    "token_address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-    "pool_address": "0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640",
-    "pool_fee": 3000,
-    "entry_price": "2129.400000",
-    "exit_target": "2249.020000",
-    "stop_loss": "2076.165000",
-    "weth_in_wei": 100000000000000000,
-    "opened_at": "2026-11-09T00:11:34.314530+00:00",
-    "tx_hash": "PAPER"
-  }
-}
+{}
