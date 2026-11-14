@@ -1,25 +1,29 @@
 ====================================================
   ETH TRADER  [PAPER]
-  14 Nov 2026  11:49 UTC
-  1 new entry
+  14 Nov 2026  17:23 UTC
+  1 stop
 ====================================================
 
-  NEW ENTRY   UNI/ETH
+  STOP LOSS   UNI/ETH                         -4.56%
 ────────────────────────────────────────────────────
-  Entry     0.002871
-  Target    0.003031  (+5.6%)
-  Stop      0.002799  (-2.5%)
-  R:R       2.231  ·  confidence 90%
+  Lost      -4.56%  (held 5h)
 
-  Why  Near BB lower · Below VWAP
+  Opened at  0.002871
+  Closed at  0.002740
+  Stop      0.002799
+
+  Why  price 0.002740 <= stop 0.002799 (-4.6%)
 
 ====================================================
-  OPEN POSITIONS (3)
-  ARB/ETH     @ 0.0000721  [1d 22h]
+  SUMMARY
+  Losses (1)   -4.56%
+  Net this run     -4.56%
+
+====================================================
+  OPEN POSITIONS (2)
+  ARB/ETH     @ 0.0000721  [2d 4h]
               target 0.0000763   stop 0.0000703
-  AAVE/ETH    @ 0.055382  [1d 22h]
+  AAVE/ETH    @ 0.055382  [2d 4h]
               target 0.059513   stop 0.053997
-  UNI/ETH     @ 0.002871  [0h]
-              target 0.003031   stop 0.002799
 
 ====================================================
