@@ -1,32 +1,25 @@
 ====================================================
   ETH TRADER  [PAPER]
-  12 Nov 2026  13:21 UTC
-  2 new entries
+  14 Nov 2026  11:49 UTC
+  1 new entry
 ====================================================
 
-  NEW ENTRY   ARB/ETH
+  NEW ENTRY   UNI/ETH
 ────────────────────────────────────────────────────
-  Entry     0.0000721
-  Target    0.0000763  (+5.8%)
-  Stop      0.0000703  (-2.5%)
-  R:R       2.355  ·  confidence 90%
+  Entry     0.002871
+  Target    0.003031  (+5.6%)
+  Stop      0.002799  (-2.5%)
+  R:R       2.231  ·  confidence 90%
 
   Why  Near BB lower · Below VWAP
 
-  NEW ENTRY   AAVE/ETH
-────────────────────────────────────────────────────
-  Entry     0.055382
-  Target    0.059513  (+7.5%)
-  Stop      0.053997  (-2.5%)
-  R:R       2.984  ·  confidence 100%
-
-  Why  RSI oversold · Near BB lower · Below VWAP
-
 ====================================================
-  OPEN POSITIONS (2)
-  ARB/ETH     @ 0.0000721  [0h]
+  OPEN POSITIONS (3)
+  ARB/ETH     @ 0.0000721  [1d 22h]
               target 0.0000763   stop 0.0000703
-  AAVE/ETH    @ 0.055382  [0h]
+  AAVE/ETH    @ 0.055382  [1d 22h]
               target 0.059513   stop 0.053997
+  UNI/ETH     @ 0.002871  [0h]
+              target 0.003031   stop 0.002799
 
 ====================================================
